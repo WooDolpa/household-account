@@ -1,0 +1,102 @@
+.sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background-color: #1e2a3b;
+    padding: 16px 0;
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    overflow-y: auto;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sidebar-menu__item {
+    display: block;
+    padding: 10px 20px;
+    color: #cbd5e1;
+    font-size: 14px;
+    border-radius: 6px;
+    margin: 0 8px;
+    transition: background-color 0.15s;
+}
+
+.sidebar-menu__item:hover {
+    background-color: #2d3f55;
+    color: #ffffff;
+}
+
+.sidebar-menu__item--active {
+    background-color: #4a6cf7;
+    color: #ffffff;
+}
+
+.sidebar-menu__group-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 20px;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.sidebar-menu__group-title:hover {
+    color: #cbd5e1;
+}
+
+.sidebar-menu__arrow {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+}
+
+.sidebar-menu__group-title[aria-expanded="true"] .sidebar-menu__arrow {
+    transform: rotate(45deg);
+}
+
+.sidebar-submenu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 4px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+}
+
+.sidebar-submenu__item {
+    display: block;
+    padding: 8px 20px 8px 32px;
+    color: #94a3b8;
+    font-size: 13px;
+    border-radius: 6px;
+    margin: 0 8px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.sidebar-submenu__item:hover {
+    background-color: #2d3f55;
+    color: #ffffff;
+}
+
+.sidebar-submenu__item--active {
+    color: #7c9ff7;
+}

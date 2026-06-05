@@ -5,8 +5,8 @@ plugins {
 }
 
 group = 'household.account'
-version = '0.0.1-SNAPSHOT'
-description = 'household-account'
+version = '1.0.0'
+description = '우리집 가계부'
 
 java {
     toolchain {
@@ -19,19 +19,27 @@ repositories {
 }
 
 dependencies {
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
     compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
-    testCompileOnly 'org.projectlombok:lombok'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testAnnotationProcessor 'org.projectlombok:lombok'
+
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+// profile 설정
+ext.profile = (!project.hasProperty('profile') || !profile) ? 'local' : profile
+
+// 리소스 디렉토리 추가
+sourceSets {
+    main {
+        resources {
+            srcDirs = ["src/main/resources", "src/main/resources/${profile}"]
+        }
+    }
 }

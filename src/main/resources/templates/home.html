@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>가계부</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebar.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body>
+
+<header class="header">
+    <span class="header__title">가계부</span>
+</header>
+
+<div class="layout">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+
+    <main class="main">
+        <!-- 월 선택 -->
+        <section class="month-nav">
+            <a href="#" class="month-nav__btn">&lt;</a>
+            <span class="month-nav__label">2026년 6월</span>
+            <a href="#" class="month-nav__btn">&gt;</a>
+        </section>
+
+        <!-- 수입/지출/잔액 요약 -->
+        <section class="summary">
+            <div class="summary-card">
+                <span class="summary-card__label">수입</span>
+                <span class="summary-card__amount summary-card__amount--income">1,500,000원</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-card__label">지출</span>
+                <span class="summary-card__amount summary-card__amount--expense">870,000원</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-card__label">잔액</span>
+                <span class="summary-card__amount summary-card__amount--balance">630,000원</span>
+            </div>
+        </section>
+
+        <!-- 내역 목록 -->
+        <section class="table-wrap">
+            <table class="account-table">
+                <thead>
+                    <tr>
+                        <th>날짜</th>
+                        <th>분류</th>
+                        <th>내용</th>
+                        <th>금액</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2026-06-01</td>
+                        <td>식비</td>
+                        <td>점심</td>
+                        <td>12,000원</td>
+                    </tr>
+                    <tr>
+                        <td>2026-06-03</td>
+                        <td>교통</td>
+                        <td>버스</td>
+                        <td>1,400원</td>
+                    </tr>
+                    <tr>
+                        <td>2026-06-05</td>
+                        <td>수입</td>
+                        <td>월급</td>
+                        <td>1,500,000원</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
+
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>
