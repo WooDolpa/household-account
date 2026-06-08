@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카테고리 관리 - 가계부</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebar.css}">
+    <link rel="stylesheet" th:href="@{/css/category.css}">
+</head>
+<body>
+
+<header class="header">
+    <span class="header__title">가계부</span>
+</header>
+
+<div class="layout">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+
+    <main class="main">
+        <h1 class="page-title">카테고리 관리</h1>
+
+        <div class="category-layout">
+
+            <!-- 대분류 패널 -->
+            <div class="category-panel">
+                <div class="category-panel__header">
+                    <span class="category-panel__title">대분류</span>
+                    <button class="category-panel__add-btn" id="addParentBtn">+</button>
+                </div>
+                <ul class="category-list" id="parentList">
+                    <li class="category-item"
+                        th:each="cat : ${categories}"
+                        th:data-id="${cat.id}"
+                        th:data-name="${cat.name}">
+                        <div class="category-item__view">
+                            <span class="category-item__name" th:text="${cat.name}"></span>
+                            <div class="category-item__actions">
+                                <button class="category-item__btn edit-btn">수정</button>
+                                <button class="category-item__btn delete-btn">삭제</button>
+                            </div>
+                        </div>
+                        <div class="category-item__confirm">
+                            <span class="category-item__confirm-text">정말 삭제하시겠습니까?</span>
+                            <button class="category-item__btn category-item__btn--danger confirm-btn">확인</button>
+                            <button class="category-item__btn cancel-btn">취소</button>
+                        </div>
+                    </li>
+                    <li class="category-list__empty" th:if="${#lists.isEmpty(categories)}">
+                        등록된 대분류가 없습니다
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 소분류 패널 -->
+            <div class="category-panel">
+                <div class="category-panel__header">
+                    <span class="category-panel__title" id="childPanelTitle">소분류</span>
+                    <button class="category-panel__add-btn" id="addChildBtn" disabled>+</button>
+                </div>
+                <ul class="category-list" id="childList">
+                    <li class="category-list__empty">대분류를 선택하세요</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- 모달 -->
+        <div class="modal-overlay hidden" id="modalOverlay">
+            <div class="modal">
+                <h2 class="modal__title" id="modalTitle">카테고리 추가</h2>
+                <div class="form-group">
+                    <label class="form-label" for="modalNameInput">이름</label>
+                    <input type="text" class="form-input" id="modalNameInput" placeholder="카테고리 이름을 입력하세요">
+                    <span class="form-error hidden" id="modalNameError">이름을 입력해 주세요</span>
+                </div>
+                <div class="modal__footer">
+                    <button type="button" class="btn btn--secondary" id="modalCancelBtn">취소</button>
+                    <button type="button" class="btn btn--primary" id="modalSaveBtn">저장</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script th:src="@{/js/category.js}"></script>
+</body>
+</html>

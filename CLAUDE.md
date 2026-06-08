@@ -14,8 +14,11 @@ On Windows use `gradlew.bat`; on Unix use `./gradlew`.
 # Build
 gradlew build
 
-# Run (local profile requires env vars — see Database Setup)
-gradlew bootRun --args='--spring.profiles.active=local'
+# Run (local profile — requires MARIADB_URL, MARIADB_USERNAME, MARIADB_PASSWORD env vars)
+gradlew bootRun
+
+# Run with a specific profile (e.g. prod — requires src/main/resources/prod/application.yml)
+gradlew bootRun -P profile=prod
 
 # Run all tests
 gradlew test
@@ -27,46 +30,45 @@ gradlew test --tests "household.account.web.HouseholdAccountApplicationTests"
 gradlew clean build
 ```
 
-## Tech Stack
-
-- **Spring Boot 4.0.6** with Spring MVC
-- **Spring Data JPA** + **HikariCP** — persistence layer
-- **Thymeleaf** — server-side HTML templates (`classpath:/templates/*.html`, cache off)
-- **MariaDB** — database (`mariadb-java-client` driver)
-- **Lombok** — boilerplate reduction
-- **Spring Boot DevTools** — hot reload in development
-
 ## Architecture
 
 Entry point: `household.account.web.Application`
 
-`BeanConfig` manually declares the `DataSource` bean using `@ConfigurationProperties(prefix = "spring.datasource.hikari")` instead of Spring Boot's auto-configured datasource. This means datasource properties must go under `spring.datasource.hikari.*`.
+**Profile / Resource Loading**
+`build.gradle` adds `src/main/resources/${profile}` to the classpath sourceSets. The Gradle `profile` property defaults to `local`, so `src/main/resources/local/application.yml` is always included unless overridden with `-P profile=<name>`. Each profile directory must contain its own `application.yml`.
 
-## Configuration / Profiles
+**DataSource**
+`BeanConfig` manually declares the `DataSource` bean with `@ConfigurationProperties(prefix = "spring.datasource.hikari")`. Datasource properties must go under `spring.datasource.hikari.*`, not `spring.datasource.*`.
 
-Active profile config files live under `src/main/resources/{profile}/application.yml`.
+**JPA**
+`JpaConfig` enables `@EnableJpaAuditing`. Entities that need audit timestamps should use `@EntityListeners(AuditingEntityListener.class)` with `@CreatedDate` / `@LastModifiedDate`. `ddl-auto` is `none` — schema changes must be applied manually.
 
-The `local` profile (`src/main/resources/local/application.yml`) reads datasource credentials from environment variables:
+**Thymeleaf Fragments**
+Shared UI components live in `src/main/resources/templates/fragments/`. Include them with:
+```html
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+```
 
-| Variable | Purpose |
-|---|---|
-| `MARIADB_URL` | JDBC URL after `jdbc:mariadb://` (host:port/db) |
-| `MARIADB_USERNAME` | DB username |
-| `MARIADB_PASSWORD` | DB password |
-
-`ddl-auto` is set to `none` — schema changes must be applied manually. Hibernate SQL logging (`DEBUG`) and bind-parameter logging (`TRACE`) are enabled in the local profile.
+**Planned Routes** (sidebar defines these; controllers not yet implemented):
+- `/account/income`, `/account/expense` — 수입/지출 입력
+- `/stats/monthly`, `/stats/category` — 통계
+- `/settings/category`, `/settings/account` — 설정
 
 ## Package Structure
 
 Base package: `household.account.web`
 
-Intended layering as the project grows:
-- `*.config` — Spring `@Configuration` classes (datasource, beans)
-- `*.domain` — JPA entities and Spring Data repository interfaces
+- `*.config` — `@Configuration` classes (datasource, JPA)
+- `*.controller.view` — Spring MVC view controllers (return template names)
+- `*.domain` — JPA entities and Spring Data repositories
 - `*.service` — business logic
-- `*.controller` — Spring MVC controllers
 - `*.dto` — request/response objects
 
+Static assets: `src/main/resources/static/css/` and `src/main/resources/static/js/`
+
+## 역할
+- 프론트엔드 
+
 ## 코드 규칙
-- html 파일안에 인라인 코드(style, script) 금지
-- html, css, js 파일 분리해서 작업
+- HTML 파일 안에 인라인 코드(style, script) 금지
+- HTML, CSS, JS 파일 분리해서 작업
