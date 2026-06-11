@@ -20,12 +20,6 @@ gradlew bootRun
 # Run with a specific profile (e.g. prod — requires src/main/resources/prod/application.yml)
 gradlew bootRun -P profile=prod
 
-# Run all tests
-gradlew test
-
-# Run a single test class
-gradlew test --tests "household.account.web.HouseholdAccountApplicationTests"
-
 # Clean build
 gradlew clean build
 ```
@@ -46,13 +40,8 @@ Entry point: `household.account.web.Application`
 **Thymeleaf Fragments**
 Shared UI components live in `src/main/resources/templates/fragments/`. Include them with:
 ```html
-<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
 ```
-
-**Planned Routes** (sidebar defines these; controllers not yet implemented):
-- `/account/income`, `/account/expense` — 수입/지출 입력
-- `/stats/monthly`, `/stats/category` — 통계
-- `/settings/category`, `/settings/account` — 설정
 
 ## Package Structure
 
@@ -60,14 +49,45 @@ Base package: `household.account.web`
 
 - `*.config` — `@Configuration` classes (datasource, JPA)
 - `*.controller.view` — Spring MVC view controllers (return template names)
+- `*.controller.api` — REST API controllers (return JSON; not yet created)
 - `*.domain` — JPA entities and Spring Data repositories
 - `*.service` — business logic
 - `*.dto` — request/response objects
 
 Static assets: `src/main/resources/static/css/` and `src/main/resources/static/js/`
 
-## 역할
-- 프론트엔드 
+## Routes
+
+**Implemented:**
+- `GET /` — 홈 (`HomeController`)
+- `GET /settings/category` — 카테고리 관리 (`SettingsController`)
+
+**REST API (called by category.js — controllers not yet implemented):**
+- `POST /api/categories` — 카테고리 생성 (body: `{ name, parentId }`)
+- `PUT /api/categories/{id}` — 카테고리 수정
+- `DELETE /api/categories/{id}` — 카테고리 삭제 (400 if children exist)
+- `GET /api/categories/{parentId}/children` — 소분류 목록 조회
+
+**Not yet implemented:**
+- `/account/income`, `/account/expense` — 수입/지출 입력
+- `/stats/monthly`, `/stats/category` — 통계
+- `/settings/account` — 계좌 관리
+
+## Page Layout Pattern
+
+Every page follows this structure:
+```html
+<header class="header">...</header>
+<div class="layout">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+    <main class="main">...</main>
+</div>
+```
+Each page includes `style.css` + `sidebar.css` + a page-specific CSS file. The page-specific JS is loaded at the bottom of `<body>`.
+
+## CSS Naming
+
+BEM convention: `block__element--modifier` (e.g. `category-item__name`, `sidebar-menu__item--active`).
 
 ## 코드 규칙
 - HTML 파일 안에 인라인 코드(style, script) 금지
