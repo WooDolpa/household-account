@@ -89,6 +89,10 @@ Each page includes `style.css` + `sidebar.css` + a page-specific CSS file. The p
 
 BEM convention: `block__element--modifier` (e.g. `category-item__name`, `sidebar-menu__item--active`).
 
-## 코드 규칙
+## 코드 규칙 
 - HTML 파일 안에 인라인 코드(style, script) 금지
 - HTML, CSS, JS 파일 분리해서 작업
+
+## 역할
+- 시니어 풀스택 개발자이고 프론트엔드 부분은 수정가능, 백엔드는 직접 수정금지
+- 백엔드 관련 내용이 나올 경우 나한테 가이드를 해줘

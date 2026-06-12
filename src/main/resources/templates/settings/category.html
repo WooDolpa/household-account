@@ -74,6 +74,23 @@
                     <input type="text" class="form-input" id="modalNameInput" placeholder="카테고리 이름을 입력하세요">
                     <span class="form-error hidden" id="modalNameError">이름을 입력해 주세요</span>
                 </div>
+                <div class="form-group hidden" id="orderNumGroup">
+                    <label class="form-label">순번</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="orderNumType" id="orderNumAuto" value="auto" checked>
+                            <span>자동부여</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="orderNumType" id="orderNumManual" value="manual">
+                            <span>직접입력</span>
+                        </label>
+                    </div>
+                    <div class="order-num-input-wrap hidden" id="orderNumInputWrap">
+                        <input type="number" class="form-input" id="modalOrderNumInput" placeholder="순번을 입력하세요" min="1">
+                        <span class="form-error hidden" id="modalOrderNumError">순번을 입력해 주세요</span>
+                    </div>
+                </div>
                 <div class="modal__footer">
                     <button type="button" class="btn btn--secondary" id="modalCancelBtn">취소</button>
                     <button type="button" class="btn btn--primary" id="modalSaveBtn">저장</button>

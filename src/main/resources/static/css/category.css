@@ -257,6 +257,32 @@
 
 
 /* =====================
+   Radio Group
+   ===================== */
+.radio-group {
+    display: flex;
+    gap: 20px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #334155;
+    cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+    cursor: pointer;
+    accent-color: #4a6cf7;
+}
+
+.order-num-input-wrap {
+    margin-top: 12px;
+}
+
+/* =====================
    Buttons
    ===================== */
 .btn {

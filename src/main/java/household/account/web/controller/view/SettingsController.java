@@ -12,5 +12,4 @@ public class SettingsController {
     public String category() {
         return "settings/category";
     }
-
 }

@@ -14,6 +14,10 @@
     var modalTitle = document.getElementById('modalTitle');
     var modalNameInput = document.getElementById('modalNameInput');
     var modalNameError = document.getElementById('modalNameError');
+    var orderNumGroup = document.getElementById('orderNumGroup');
+    var orderNumInputWrap = document.getElementById('orderNumInputWrap');
+    var modalOrderNumInput = document.getElementById('modalOrderNumInput');
+    var modalOrderNumError = document.getElementById('modalOrderNumError');
 
     /* ─── Modal ─────────────────────────────────────────── */
 
@@ -21,6 +25,13 @@
         modalMode = mode;
         modalNameInput.value = prefillName || '';
         modalNameError.classList.add('hidden');
+        document.getElementById('orderNumAuto').checked = true;
+        modalOrderNumInput.value = '';
+        modalOrderNumError.classList.add('hidden');
+        orderNumInputWrap.classList.add('hidden');
+
+        var isAddParent = mode === 'add-parent';
+        orderNumGroup.classList.toggle('hidden', !isAddParent);
 
         var titles = {
             'add-parent': '대분류 추가',
@@ -58,6 +69,21 @@
         if (e.key === 'Enter') handleSave();
     });
 
+    modalOrderNumInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') handleSave();
+    });
+
+    document.querySelectorAll('input[name="orderNumType"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            var isManual = this.value === 'manual';
+            orderNumInputWrap.classList.toggle('hidden', !isManual);
+            if (!isManual) {
+                modalOrderNumInput.value = '';
+                modalOrderNumError.classList.add('hidden');
+            }
+        });
+    });
+
     function handleSave() {
         var name = modalNameInput.value.trim();
         var valid = true;
@@ -69,10 +95,27 @@
             modalNameError.classList.add('hidden');
         }
 
+        var orderNum = null;
+        var orderType = 'auto';
+        if (modalMode === 'add-parent') {
+            var isManual = document.getElementById('orderNumManual').checked;
+            orderType = isManual ? 'manual' : 'auto';
+            if (isManual) {
+                var orderNumVal = modalOrderNumInput.value.trim();
+                if (!orderNumVal) {
+                    modalOrderNumError.classList.remove('hidden');
+                    valid = false;
+                } else {
+                    modalOrderNumError.classList.add('hidden');
+                    orderNum = Number(orderNumVal);
+                }
+            }
+        }
+
         if (!valid) return;
 
         if (modalMode === 'add-parent') {
-            apiCreate({ name: name, parentId: null });
+            apiCreateParent({ name: name, orderType: orderType, orderNum: orderNum });
         } else if (modalMode === 'add-child') {
             apiCreate({ name: name, parentId: selectedParentId });
         } else if (modalMode === 'edit-parent' || modalMode === 'edit-child') {
@@ -81,6 +124,24 @@
     }
 
     /* ─── API ────────────────────────────────────────────── */
+
+    function apiCreateParent(body) {
+        fetch('/category/parent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error();
+            return res.json();
+        })
+        .then(function () {
+            location.reload();
+        })
+        .catch(function () {
+            alert('저장에 실패했습니다.');
+        });
+    }
 
     function apiCreate(body) {
         fetch('/api/categories', {
