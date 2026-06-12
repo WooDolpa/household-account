@@ -35,7 +35,10 @@ Entry point: `household.account.web.Application`
 `BeanConfig` manually declares the `DataSource` bean with `@ConfigurationProperties(prefix = "spring.datasource.hikari")`. Datasource properties must go under `spring.datasource.hikari.*`, not `spring.datasource.*`.
 
 **JPA**
-`JpaConfig` enables `@EnableJpaAuditing`. Entities that need audit timestamps should use `@EntityListeners(AuditingEntityListener.class)` with `@CreatedDate` / `@LastModifiedDate`. `ddl-auto` is `none` — schema changes must be applied manually.
+`JpaConfig` enables `@EnableJpaAuditing`. All entities extend `BaseEntity` which provides `createdDate` / `modifiedDate` via `@CreatedDate` / `@LastModifiedDate`. `ddl-auto` is `none` — schema changes must be applied manually.
+
+**QueryDSL**
+`QueryDSLConfig` exposes a `JPAQueryFactory` bean injected with `@PersistenceContext EntityManager`. Custom query logic goes in `*RepositoryImpl` (implements `*CustomRepository`). Spring Data JPA and QueryDSL share the same transaction-scoped `EntityManager` proxy, so dirty checking works across both within a `@Transactional` method.
 
 **Thymeleaf Fragments**
 Shared UI components live in `src/main/resources/templates/fragments/`. Include them with:
@@ -43,29 +46,42 @@ Shared UI components live in `src/main/resources/templates/fragments/`. Include 
 <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
 ```
 
+**Error Handling**
+Services throw `CustomException(ExceptionCode)`. `CustomExceptionHandler` (`@ControllerAdvice`) catches these and returns `ResponseEntity<String>` with `ApiResponseDto.makeResponse(e)` at the exception's `HttpStatus`. All API responses — success and error — use `{ code, message }` JSON shape (no `data` field unless explicitly added via `makeResponse(Object data)`).
+
+**Enums**
+- `DataStatus` — `Yes("Y")` / `No("N")`. Persisted as `"Y"`/`"N"` via `DataStatusConverter`. Default on new records is `DataStatus.Yes`.
+- `OrderType` — `Auto("auto")` / `Manual("manual")`. Used only in service logic, not persisted.
+
 ## Package Structure
 
 Base package: `household.account.web`
 
-- `*.config` — `@Configuration` classes (datasource, JPA)
+- `*.config` — `@Configuration` classes (datasource, JPA, QueryDSL)
 - `*.controller.view` — Spring MVC view controllers (return template names)
-- `*.controller.api` — REST API controllers (return JSON; not yet created)
-- `*.domain` — JPA entities and Spring Data repositories
-- `*.service` — business logic
-- `*.dto` — request/response objects
+- `*.controller.api` — REST API controllers (`@RestController`, return JSON via `ApiResponseDto`)
+- `*.domain` — JPA entities; all extend `BaseEntity`
+- `*.repository` — Spring Data `JpaRepository` + `*CustomRepository` interface + `*RepositoryImpl` (QueryDSL)
+- `*.service` — business logic; class-level `@Transactional(readOnly = true)`, write methods override with `@Transactional`
+- `*.dto` — request/response objects (inner static classes inside one `*Dto` file per domain)
+- `*.enums` — domain enumerations
+- `*.exception` — `CustomException`, `ExceptionCode`, `CustomExceptionHandler`
 
 Static assets: `src/main/resources/static/css/` and `src/main/resources/static/js/`
 
 ## Routes
 
-**Implemented:**
+**View:**
 - `GET /` — 홈 (`HomeController`)
 - `GET /settings/category` — 카테고리 관리 (`SettingsController`)
 
-**REST API (called by category.js — controllers not yet implemented):**
-- `POST /api/categories` — 카테고리 생성 (body: `{ name, parentId }`)
+**REST API — Implemented (`CategoryController`):**
+- `POST /category/parent` — 대분류 등록 (body: `{ name, orderType, orderNum }`)
+- `POST /category` — 소분류 등록 (body: `{ parentId, name, orderType, orderNum }`)
+
+**REST API — Frontend calls exist, backend not yet implemented:**
 - `PUT /api/categories/{id}` — 카테고리 수정
-- `DELETE /api/categories/{id}` — 카테고리 삭제 (400 if children exist)
+- `DELETE /api/categories/{id}` — 카테고리 삭제 (소분류 있으면 400)
 - `GET /api/categories/{parentId}/children` — 소분류 목록 조회
 
 **Not yet implemented:**
@@ -89,7 +105,7 @@ Each page includes `style.css` + `sidebar.css` + a page-specific CSS file. The p
 
 BEM convention: `block__element--modifier` (e.g. `category-item__name`, `sidebar-menu__item--active`).
 
-## 코드 규칙 
+## 코드 규칙
 - HTML 파일 안에 인라인 코드(style, script) 금지
 - HTML, CSS, JS 파일 분리해서 작업
 
