@@ -60,6 +60,27 @@ public class CategoryService {
     }
 
     /**
+     * 대분류 조회
+     *
+     * @return
+     */
+    public List<CategoryDto.ParentCategoryResDto> findParentCategoryList() {
+
+        List<Category> categoryList = categoryRepository.findParentCategoryList()
+                .orElse(new ArrayList<>());
+
+        return categoryList.stream()
+                .map(category -> {
+                    return CategoryDto.ParentCategoryResDto.builder()
+                            .id(category.getId())
+                            .name(category.getName())
+                            .parentId(category.getParentId())
+                            .orderNum(category.getOrderNum())
+                            .build();
+                }).toList();
+    }
+
+    /**
      * 소분류 등록
      *
      * @param dto
@@ -95,5 +116,25 @@ public class CategoryService {
                 .build();
 
         categoryRepository.save(category);
+    }
+
+    /**
+     * 소분류 조회
+     *
+     * @param parentId
+     * @return
+     */
+    public List<CategoryDto.CategoryResDto> findCategoryList(Integer parentId) {
+
+        List<Category> list = categoryRepository.findCategoryListByParentId(parentId).orElse(new ArrayList<>());
+
+        return list.stream().map(category -> {
+            return CategoryDto.CategoryResDto.builder()
+                    .id(category.getId())
+                    .name(category.getName())
+                    .parentId(category.getParentId())
+                    .orderNum(category.getOrderNum())
+                    .build();
+        }).toList();
     }
 }

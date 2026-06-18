@@ -74,6 +74,31 @@
 }
 
 /* =====================
+   Panel Search
+   ===================== */
+.category-panel__search {
+    padding: 10px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.category-panel__search-input {
+    width: 100%;
+    padding: 7px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #1e2a3b;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+
+.category-panel__search-input:focus {
+    border-color: #4a6cf7;
+}
+
+/* =====================
    Category List
    ===================== */
 .category-list {

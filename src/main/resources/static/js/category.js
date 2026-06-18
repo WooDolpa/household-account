@@ -5,6 +5,8 @@
     var selectedParentName = null;
     var modalMode = null; // 'add-parent' | 'add-child' | 'edit-parent' | 'edit-child'
     var editTargetId = null;
+    var allParents = [];
+    var allChildren = [];
 
     var parentList = document.getElementById('parentList');
     var childList = document.getElementById('childList');
@@ -30,8 +32,8 @@
         modalOrderNumError.classList.add('hidden');
         orderNumInputWrap.classList.add('hidden');
 
-        var isAddParent = mode === 'add-parent';
-        orderNumGroup.classList.toggle('hidden', !isAddParent);
+        var showOrderNum = mode === 'add-parent' || mode === 'add-child';
+        orderNumGroup.classList.toggle('hidden', !showOrderNum);
 
         var titles = {
             'add-parent': '대분류 추가',
@@ -97,7 +99,7 @@
 
         var orderNum = null;
         var orderType = 'auto';
-        if (modalMode === 'add-parent') {
+        if (modalMode === 'add-parent' || modalMode === 'add-child') {
             var isManual = document.getElementById('orderNumManual').checked;
             orderType = isManual ? 'manual' : 'auto';
             if (isManual) {
@@ -117,13 +119,54 @@
         if (modalMode === 'add-parent') {
             apiCreateParent({ name: name, orderType: orderType, orderNum: orderNum });
         } else if (modalMode === 'add-child') {
-            apiCreate({ name: name, parentId: selectedParentId });
+            apiCreate({ parentId: selectedParentId, name: name, orderType: orderType, orderNum: orderNum });
         } else if (modalMode === 'edit-parent' || modalMode === 'edit-child') {
             apiUpdate(editTargetId, { name: name });
         }
     }
 
     /* ─── API ────────────────────────────────────────────── */
+
+    function apiLoadParents() {
+        fetch('/category/parent/list')
+        .then(function (res) {
+            if (!res.ok) throw new Error();
+            return res.json();
+        })
+        .then(function (res) {
+            allParents = res.data || [];
+            var keyword = document.getElementById('parentSearchInput').value.trim();
+            filterParents(keyword);
+        })
+        .catch(function () {
+            parentList.innerHTML = '<li class="category-list__empty">불러오기에 실패했습니다</li>';
+        });
+    }
+
+    function renderParents(list) {
+        parentList.innerHTML = '';
+        if (list.length === 0) {
+            parentList.innerHTML = '<li class="category-list__empty">등록된 대분류가 없습니다</li>';
+            return;
+        }
+        list.forEach(appendParentItem);
+    }
+
+    function filterParents(keyword) {
+        if (!keyword) {
+            renderParents(allParents);
+            return;
+        }
+        var lower = keyword.toLowerCase();
+        var filtered = allParents.filter(function (cat) {
+            return cat.name.toLowerCase().indexOf(lower) !== -1;
+        });
+        if (filtered.length === 0) {
+            parentList.innerHTML = '<li class="category-list__empty">검색 결과가 없습니다</li>';
+            return;
+        }
+        renderParents(filtered);
+    }
 
     function apiCreateParent(body) {
         fetch('/category/parent', {
@@ -136,7 +179,8 @@
             return res.json();
         })
         .then(function () {
-            location.reload();
+            closeModal();
+            apiLoadParents();
         })
         .catch(function () {
             alert('저장에 실패했습니다.');
@@ -144,7 +188,7 @@
     }
 
     function apiCreate(body) {
-        fetch('/api/categories', {
+        fetch('/category', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -153,15 +197,9 @@
             if (!res.ok) throw new Error();
             return res.json();
         })
-        .then(function (data) {
+        .then(function () {
             closeModal();
-            if (body.parentId === null) {
-                removeEmptyState(parentList);
-                appendParentItem(data);
-            } else {
-                removeEmptyState(childList);
-                appendChildItem(data);
-            }
+            apiLoadChildren(selectedParentId);
         })
         .catch(function () {
             alert('저장에 실패했습니다.');
@@ -212,22 +250,44 @@
     }
 
     function apiLoadChildren(parentId) {
-        fetch('/api/categories/' + parentId + '/children')
+        fetch('/category/list?parentId=' + parentId)
         .then(function (res) {
             if (!res.ok) throw new Error();
             return res.json();
         })
-        .then(function (data) {
-            childList.innerHTML = '';
-            if (data.length === 0) {
-                childList.innerHTML = '<li class="category-list__empty">등록된 소분류가 없습니다</li>';
-                return;
-            }
-            data.forEach(appendChildItem);
+        .then(function (res) {
+            allChildren = res.data || [];
+            var keyword = document.getElementById('childSearchInput').value.trim();
+            filterChildren(keyword);
         })
         .catch(function () {
             childList.innerHTML = '<li class="category-list__empty">불러오기에 실패했습니다</li>';
         });
+    }
+
+    function renderChildren(list) {
+        childList.innerHTML = '';
+        if (list.length === 0) {
+            childList.innerHTML = '<li class="category-list__empty">등록된 소분류가 없습니다</li>';
+            return;
+        }
+        list.forEach(appendChildItem);
+    }
+
+    function filterChildren(keyword) {
+        if (!keyword) {
+            renderChildren(allChildren);
+            return;
+        }
+        var lower = keyword.toLowerCase();
+        var filtered = allChildren.filter(function (cat) {
+            return cat.name.toLowerCase().indexOf(lower) !== -1;
+        });
+        if (filtered.length === 0) {
+            childList.innerHTML = '<li class="category-list__empty">검색 결과가 없습니다</li>';
+            return;
+        }
+        renderChildren(filtered);
     }
 
     /* ─── DOM Helpers ────────────────────────────────────── */
@@ -279,8 +339,10 @@
     function resetChildPanel() {
         selectedParentId = null;
         selectedParentName = null;
+        allChildren = [];
         childPanelTitle.textContent = '소분류';
         addChildBtn.disabled = true;
+        document.getElementById('childSearchInput').value = '';
         childList.innerHTML = '<li class="category-list__empty">대분류를 선택하세요</li>';
     }
 
@@ -372,5 +434,19 @@
         if (!selectedParentId) return;
         openModal('add-child');
     });
+
+    /* ─── Search ─────────────────────────────────────────── */
+
+    document.getElementById('parentSearchInput').addEventListener('input', function () {
+        filterParents(this.value.trim());
+    });
+
+    document.getElementById('childSearchInput').addEventListener('input', function () {
+        filterChildren(this.value.trim());
+    });
+
+    /* ─── Init ───────────────────────────────────────────── */
+
+    apiLoadParents();
 
 })();

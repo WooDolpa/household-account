@@ -3,6 +3,7 @@ package household.account.web.repository;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import household.account.web.domain.category.Category;
+import household.account.web.enums.DataStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 
@@ -38,6 +39,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         category.parentId.isNull(),
+                        category.dataStatus.ne(DataStatus.No),
                         matchOrderNumGoe(orderNum)
                 )
                 .orderBy(category.orderNum.asc())
@@ -51,10 +53,28 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
 
         Long totalCount = factory.select(category.count())
                 .from(category)
-                .where(category.parentId.isNull())
+                .where(
+                        category.parentId.isNull(),
+                        category.dataStatus.ne(DataStatus.No)
+                )
                 .fetchOne();
 
         return (totalCount != null) ? totalCount : 0L;
+    }
+
+    @Override
+    public Optional<List<Category>> findParentCategoryList() {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        category.parentId.isNull(),
+                        category.dataStatus.ne(DataStatus.No)
+                )
+                .orderBy(category.orderNum.asc())
+                .fetch();
+
+        return Optional.ofNullable(list);
     }
 
     @Override
@@ -64,6 +84,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
+                        category.dataStatus.ne(DataStatus.No),
                         matchName(name)
                 )
                 .fetchOne();
@@ -78,6 +99,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
+                        category.dataStatus.ne(DataStatus.No),
                         matchName(name)
                 )
                 .orderBy(category.orderNum.asc())
@@ -91,10 +113,28 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
 
         Long totalCount = factory.select(category.count())
                 .from(category)
-                .where(matchParentId(parentId))
+                .where(
+                        matchParentId(parentId),
+                        category.dataStatus.ne(DataStatus.No)
+                )
                 .fetchOne();
 
         return (totalCount != null) ? totalCount : 0L;
+    }
+
+    @Override
+    public Optional<List<Category>> findCategoryListByParentId(Integer parentId) {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        matchParentId(parentId),
+                        category.dataStatus.ne(DataStatus.No)
+                )
+                .orderBy(category.orderNum.asc())
+                .fetch();
+
+        return Optional.ofNullable(list);
     }
 
     private BooleanExpression matchName(String name) {

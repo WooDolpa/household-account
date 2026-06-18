@@ -7,10 +7,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -33,6 +32,18 @@ public class CategoryController {
     }
 
     /**
+     * 대분류 조회
+     *
+     * @return
+     */
+    @GetMapping(path = "/parent/list")
+    public ResponseEntity<String> findParentCategoryList() {
+        List<CategoryDto.ParentCategoryResDto> list = categoryService.findParentCategoryList();
+        return new ResponseEntity<>(ApiResponseDto.makeResponse(list), HttpStatus.OK);
+    }
+
+
+    /**
      * 소분류 등록
      *
      * @param dto
@@ -42,5 +53,17 @@ public class CategoryController {
     public ResponseEntity<String> saveCategory(@RequestBody CategoryDto.CategoryRegDto dto) {
         categoryService.saveCategory(dto);
         return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
+    }
+
+    /**
+     * 소분류 조회
+     *
+     * @param parentId
+     * @return
+     */
+    @GetMapping(path = "/list")
+    public ResponseEntity<String> findCategoryList(@RequestParam(name = "parentId") Integer parentId) {
+        List<CategoryDto.CategoryResDto> list = categoryService.findCategoryList(parentId);
+        return new ResponseEntity<>(ApiResponseDto.makeResponse(list), HttpStatus.OK);
     }
 }

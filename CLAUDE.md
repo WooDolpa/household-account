@@ -46,6 +46,9 @@ Shared UI components live in `src/main/resources/templates/fragments/`. Include 
 <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
 ```
 
+**Thymeleaf 3.1+ 제약**
+`#request`, `#session`, `#servletContext`, `#response` 표현식 유틸 객체는 보안상 기본 비활성화됨. 템플릿에서 사용 시 `IllegalArgumentException` 런타임 에러 발생. 대신 JS에서 `window.location.pathname` 등으로 처리할 것.
+
 **Error Handling**
 Services throw `CustomException(ExceptionCode)`. `CustomExceptionHandler` (`@ControllerAdvice`) catches these and returns `ResponseEntity<String>` with `ApiResponseDto.makeResponse(e)` at the exception's `HttpStatus`. All API responses — success and error — use `{ code, message }` JSON shape (no `data` field unless explicitly added via `makeResponse(Object data)`).
 
@@ -75,14 +78,15 @@ Static assets: `src/main/resources/static/css/` and `src/main/resources/static/j
 - `GET /` — 홈 (`HomeController`)
 - `GET /settings/category` — 카테고리 관리 (`SettingsController`)
 
-**REST API — Implemented (`CategoryController`):**
+**REST API — Implemented & Connected (`CategoryController`):**
 - `POST /category/parent` — 대분류 등록 (body: `{ name, orderType, orderNum }`)
+- `GET /category/parent/list` — 대분류 목록 조회 (응답: `{ code, message, data: [...] }`)
 - `POST /category` — 소분류 등록 (body: `{ parentId, name, orderType, orderNum }`)
+- `GET /category/list?parentId={parentId}` — 소분류 목록 조회 (응답: `{ code, message, data: [...] }`)
 
 **REST API — Frontend calls exist, backend not yet implemented:**
 - `PUT /api/categories/{id}` — 카테고리 수정
 - `DELETE /api/categories/{id}` — 카테고리 삭제 (소분류 있으면 400)
-- `GET /api/categories/{parentId}/children` — 소분류 목록 조회
 
 **Not yet implemented:**
 - `/account/income`, `/account/expense` — 수입/지출 입력
@@ -100,6 +104,41 @@ Every page follows this structure:
 </div>
 ```
 Each page includes `style.css` + `sidebar.css` + a page-specific CSS file. The page-specific JS is loaded at the bottom of `<body>`.
+
+**사이드바 토글 JS 필수 포함:** 사이드바를 사용하는 모든 페이지는 반드시 `sidebar.js`를 로드해야 한다. 누락 시 그룹 메뉴 토글이 동작하지 않는다.
+```html
+<script th:src="@{/js/sidebar.js}"></script>
+<script th:src="@{/js/[page].js}"></script>
+```
+
+**sidebar.js 동작:**
+- 그룹 제목 클릭 시 서브메뉴 열기/닫기 토글 (아코디언 방식)
+- `window.location.pathname`으로 현재 URL 감지 → 일치하는 링크에 `--active` 클래스 추가
+- 활성 서브메뉴 항목이 속한 그룹은 페이지 로드 시 자동으로 열림
+- `sidebar.html`에는 활성 상태 마크업 없음 (Thymeleaf `#request` 제약으로 JS에서 전담)
+
+## 카테고리 관리 페이지 (`/settings/category`)
+
+**파일 구조**
+- `templates/settings/category.html`
+- `static/css/category.css`
+- `static/js/category.js`
+
+**주요 동작 방식**
+- 대분류·소분류 목록은 서버사이드 렌더링 없이 **JS에서 API 호출로 렌더링** (SettingsController는 모델 데이터를 넘기지 않음)
+- 대분류 전체 목록은 `allParents`, 소분류 전체 목록은 `allChildren` 변수에 캐싱
+- 검색은 클라이언트 사이드 필터링 (`filterParents` / `filterChildren`) — 추가 API 호출 없음
+- 대분류 클릭 시 소분류 패널 로드, 다른 대분류 선택 시 검색어·목록 초기화
+
+**DTO 구조**
+- `ParentCategoryRegDto`: `{ name, orderType, orderNum }`
+- `ParentCategoryResDto`: `{ id, name, parentId, orderNum }`
+- `CategoryRegDto`: `{ parentId, name, orderType, orderNum }`
+- `CategoryResDto`: `{ id, name, parentId, orderNum }`
+
+**미연동 API (백엔드 미구현)**
+- `PUT /api/categories/{id}` — 수정 (`apiUpdate` 함수 존재)
+- `DELETE /api/categories/{id}` — 삭제 (`apiDelete` 함수 존재)
 
 ## CSS Naming
 
