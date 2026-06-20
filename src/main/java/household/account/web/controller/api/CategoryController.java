@@ -42,7 +42,6 @@ public class CategoryController {
         return new ResponseEntity<>(ApiResponseDto.makeResponse(list), HttpStatus.OK);
     }
 
-
     /**
      * 소분류 등록
      *

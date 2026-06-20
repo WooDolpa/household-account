@@ -16,6 +16,14 @@ public class CategoryDto {
 
     @Getter
     @NoArgsConstructor
+    public static class ParentCategoryUpdDto {
+        private Integer id;
+        private String name;
+        private Integer orderNum;
+    }
+
+    @Getter
+    @NoArgsConstructor
     public static class ParentCategoryResDto {
 
         private Integer id;
