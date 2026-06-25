@@ -23,17 +23,27 @@
 
     /* ─── Modal ─────────────────────────────────────────── */
 
-    function openModal(mode, prefillName) {
+    function openModal(mode, prefillName, prefillOrderNum) {
         modalMode = mode;
         modalNameInput.value = prefillName || '';
         modalNameError.classList.add('hidden');
-        document.getElementById('orderNumAuto').checked = true;
-        modalOrderNumInput.value = '';
         modalOrderNumError.classList.add('hidden');
-        orderNumInputWrap.classList.add('hidden');
 
-        var showOrderNum = mode === 'add-parent' || mode === 'add-child';
-        orderNumGroup.classList.toggle('hidden', !showOrderNum);
+        var isEdit = mode === 'edit-parent' || mode === 'edit-child';
+        var radioGroup = orderNumGroup.querySelector('.radio-group');
+
+        if (isEdit) {
+            radioGroup.classList.add('hidden');
+            orderNumInputWrap.classList.remove('hidden');
+            modalOrderNumInput.value = prefillOrderNum != null ? prefillOrderNum : '';
+        } else {
+            radioGroup.classList.remove('hidden');
+            document.getElementById('orderNumAuto').checked = true;
+            modalOrderNumInput.value = '';
+            orderNumInputWrap.classList.add('hidden');
+        }
+
+        orderNumGroup.classList.remove('hidden');
 
         var titles = {
             'add-parent': '대분류 추가',
@@ -42,6 +52,8 @@
             'edit-child': '소분류 수정'
         };
         modalTitle.textContent = titles[mode];
+
+        document.getElementById('modalSaveBtn').textContent = isEdit ? '수정' : '저장';
 
         modalOverlay.classList.remove('hidden');
         modalNameInput.focus();
@@ -54,10 +66,6 @@
     }
 
     document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
-
-    modalOverlay.addEventListener('click', function (e) {
-        if (e.target === modalOverlay) closeModal();
-    });
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closeModal();
@@ -99,7 +107,19 @@
 
         var orderNum = null;
         var orderType = 'auto';
-        if (modalMode === 'add-parent' || modalMode === 'add-child') {
+        var isEdit = modalMode === 'edit-parent' || modalMode === 'edit-child';
+
+        if (isEdit) {
+            var orderNumVal = modalOrderNumInput.value.trim();
+            if (!orderNumVal) {
+                modalOrderNumError.classList.remove('hidden');
+                valid = false;
+            } else {
+                modalOrderNumError.classList.add('hidden');
+                orderNum = Number(orderNumVal);
+                orderType = 'manual';
+            }
+        } else {
             var isManual = document.getElementById('orderNumManual').checked;
             orderType = isManual ? 'manual' : 'auto';
             if (isManual) {
@@ -121,7 +141,7 @@
         } else if (modalMode === 'add-child') {
             apiCreate({ parentId: selectedParentId, name: name, orderType: orderType, orderNum: orderNum });
         } else if (modalMode === 'edit-parent' || modalMode === 'edit-child') {
-            apiUpdate(editTargetId, { name: name });
+            apiUpdate(editTargetId, { name: name, orderType: orderType, orderNum: orderNum });
         }
     }
 
@@ -180,10 +200,11 @@
         })
         .then(function () {
             closeModal();
+            showToast('대분류가 등록되었습니다.', 'success');
             apiLoadParents();
         })
         .catch(function () {
-            alert('저장에 실패했습니다.');
+            showToast('저장에 실패했습니다.', 'error');
         });
     }
 
@@ -199,36 +220,31 @@
         })
         .then(function () {
             closeModal();
+            showToast('소분류가 등록되었습니다.', 'success');
             apiLoadChildren(selectedParentId);
         })
         .catch(function () {
-            alert('저장에 실패했습니다.');
+            showToast('저장에 실패했습니다.', 'error');
         });
     }
 
     function apiUpdate(id, body) {
-        fetch('/api/categories/' + id, {
+        fetch('/category/parent', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body: JSON.stringify({ id: id, name: body.name, orderNum: body.orderNum })
         })
         .then(function (res) {
             if (!res.ok) throw new Error();
             return res.json();
         })
-        .then(function (data) {
+        .then(function () {
             closeModal();
-            var item = document.querySelector('[data-id="' + id + '"]');
-            if (!item) return;
-            item.dataset.name = data.name;
-            item.querySelector('.category-item__name').textContent = data.name;
-            if (selectedParentId === id) {
-                selectedParentName = data.name;
-                childPanelTitle.textContent = '소분류 — ' + data.name;
-            }
+            showToast('수정되었습니다.', 'success');
+            apiLoadParents();
         })
         .catch(function () {
-            alert('수정에 실패했습니다.');
+            showToast('수정에 실패했습니다.', 'error');
         });
     }
 
@@ -245,7 +261,7 @@
         })
         .catch(function () {
             item.classList.remove('category-item--confirming');
-            alert('삭제에 실패했습니다.');
+            showToast('삭제에 실패했습니다.', 'error');
         });
     }
 
@@ -294,11 +310,13 @@
 
     function appendParentItem(cat) {
         var li = makeItem(cat.id, cat.name, null, null, null);
+        li.dataset.orderNum = cat.orderNum;
         parentList.appendChild(li);
     }
 
     function appendChildItem(cat) {
         var li = makeItem(cat.id, cat.name, null, null, null);
+        li.dataset.orderNum = cat.orderNum;
         childList.appendChild(li);
     }
 
@@ -370,7 +388,7 @@
 
         if (e.target.classList.contains('edit-btn')) {
             editTargetId = Number(item.dataset.id);
-            openModal('edit-parent', item.dataset.name);
+            openModal('edit-parent', item.dataset.name, item.dataset.orderNum);
             return;
         }
         if (e.target.classList.contains('delete-btn')) {
@@ -407,7 +425,7 @@
 
         if (e.target.classList.contains('edit-btn')) {
             editTargetId = Number(item.dataset.id);
-            openModal('edit-child', item.dataset.name);
+            openModal('edit-child', item.dataset.name, item.dataset.orderNum);
             return;
         }
         if (e.target.classList.contains('delete-btn')) {

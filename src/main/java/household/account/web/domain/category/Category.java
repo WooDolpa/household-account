@@ -50,4 +50,20 @@ public class Category extends BaseEntity {
     public void decreaseOrderNum() {
         this.orderNum--;
     }
+
+    public void changeOrderNum(Integer orderNum) {
+        if(orderNum != null) {
+            this.orderNum = orderNum;
+        }
+    }
+
+    public void changeName(String newName) {
+        this.name = newName;
+    }
+
+    public void changeDataStatus(DataStatus dataStatus) {
+        if(dataStatus != null) {
+            this.dataStatus = dataStatus;
+        }
+    }
 }

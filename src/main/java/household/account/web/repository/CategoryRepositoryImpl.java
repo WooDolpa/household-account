@@ -63,6 +63,36 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
     }
 
     @Override
+    public Optional<List<Category>> findParentCategoryListByOrderNumGoeAndLt(Integer newOrderNum, Integer originalOrderNum) {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        category.dataStatus.ne(DataStatus.No),
+                        matchOrderNumGoe(newOrderNum),
+                        matchOrderNumLt(originalOrderNum)
+                )
+                .fetch();
+
+        return Optional.ofNullable(list);
+    }
+
+    @Override
+    public Optional<List<Category>> findParentCategoryListByOrderNumGtAndLoe(Integer originalOrderNum, Integer newOrderNum) {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        category.dataStatus.ne(DataStatus.No),
+                        matchOrderNumGt(originalOrderNum),
+                        matchOrderNumLoe(newOrderNum)
+                )
+                .fetch();
+
+        return Optional.ofNullable(list);
+    }
+
+    @Override
     public Optional<List<Category>> findParentCategoryList() {
 
         List<Category> list = factory.select(category)
@@ -154,6 +184,27 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
     private BooleanExpression matchParentId(Integer parentId) {
         if(parentId != null) {
             return category.parentId.eq(parentId);
+        }
+        return null;
+    }
+
+    private BooleanExpression matchOrderNumLt(Integer orderNum) {
+        if(orderNum != null) {
+            return category.orderNum.lt(orderNum);
+        }
+        return null;
+    }
+
+    private BooleanExpression matchOrderNumGt(Integer orderNum) {
+        if(orderNum != null) {
+            return category.orderNum.gt(orderNum);
+        }
+        return null;
+    }
+
+    private BooleanExpression matchOrderNumLoe(Integer orderNum) {
+        if(orderNum != null) {
+            return category.orderNum.loe(orderNum);
         }
         return null;
     }

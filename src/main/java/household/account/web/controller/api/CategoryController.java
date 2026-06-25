@@ -43,6 +43,18 @@ public class CategoryController {
     }
 
     /**
+     * 대분류 수정
+     *
+     * @param dto
+     * @return
+     */
+    @PutMapping(path = "/parent")
+    public ResponseEntity<String> updateParentCategory(@RequestBody CategoryDto.ParentCategoryUpdDto dto) {
+        categoryService.updateParentCategory(dto);
+        return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
+    }
+
+    /**
      * 소분류 등록
      *
      * @param dto

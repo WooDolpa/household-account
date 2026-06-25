@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -78,6 +79,36 @@ public class CategoryService {
                             .orderNum(category.getOrderNum())
                             .build();
                 }).toList();
+    }
+
+    /**
+     * 대분류 수정
+     *
+     * @param dto
+     */
+    @Transactional
+    public void updateParentCategory(CategoryDto.ParentCategoryUpdDto dto) {
+
+        Category findCategory = categoryRepository.findById(dto.getId())
+                .orElseThrow(() -> new CustomException(ExceptionCode.PARENT_CATEGORY_NOT_FOUND));
+
+        Integer originalOrderNum = findCategory.getOrderNum();
+        Integer newOrderNum = dto.getOrderNum();
+
+        if(!Objects.equals(originalOrderNum, newOrderNum)) {
+            if(originalOrderNum > newOrderNum) {
+                List<Category> list = categoryRepository.findParentCategoryListByOrderNumGoeAndLt(newOrderNum, originalOrderNum)
+                        .orElse(new ArrayList<>());
+                list.forEach(Category::increaseOrderNum);
+            }else {
+                List<Category> list = categoryRepository.findParentCategoryListByOrderNumGtAndLoe(originalOrderNum, newOrderNum)
+                        .orElse(new ArrayList<>());
+                list.forEach(Category :: decreaseOrderNum);
+            }
+
+            findCategory.changeName(dto.getName());
+            findCategory.changeOrderNum(dto.getOrderNum());
+        }
     }
 
     /**

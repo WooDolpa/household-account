@@ -81,11 +81,12 @@ Static assets: `src/main/resources/static/css/` and `src/main/resources/static/j
 **REST API — Implemented & Connected (`CategoryController`):**
 - `POST /category/parent` — 대분류 등록 (body: `{ name, orderType, orderNum }`)
 - `GET /category/parent/list` — 대분류 목록 조회 (응답: `{ code, message, data: [...] }`)
+- `PUT /category/parent` — 대분류 수정 (body: `{ id, name, orderNum }`, 응답: `{ code, message }`)
 - `POST /category` — 소분류 등록 (body: `{ parentId, name, orderType, orderNum }`)
 - `GET /category/list?parentId={parentId}` — 소분류 목록 조회 (응답: `{ code, message, data: [...] }`)
 
 **REST API — Frontend calls exist, backend not yet implemented:**
-- `PUT /api/categories/{id}` — 카테고리 수정
+- `PUT /api/categories/{id}` — 소분류 수정
 - `DELETE /api/categories/{id}` — 카테고리 삭제 (소분류 있으면 400)
 
 **Not yet implemented:**
@@ -117,6 +118,31 @@ Each page includes `style.css` + `sidebar.css` + a page-specific CSS file. The p
 - 활성 서브메뉴 항목이 속한 그룹은 페이지 로드 시 자동으로 열림
 - `sidebar.html`에는 활성 상태 마크업 없음 (Thymeleaf `#request` 제약으로 JS에서 전담)
 
+## Toast 알림 시스템
+
+**파일 구조**
+- `static/css/toast.css` — 공통 토스트 스타일
+- `static/js/toast.js` — 공통 토스트 유틸리티 (`showToast`)
+
+**사용법**
+```js
+showToast('메시지', 'success'); // 또는 'error'
+```
+
+**동작 방식**
+- 전역 함수 `showToast(message, type)` — 모든 페이지에서 재사용 가능
+- 최초 호출 시 `#toast-container` div를 자동 생성해 `<body>`에 주입
+- 우측 상단 고정 (`position: fixed; top: 24px; right: 24px`), `z-index: 9999`
+- 1.5초 후 fade-out (0.25s transition), 300ms 후 DOM 제거
+- 연한 배경색 + 좌측 4px 컬러 border (success: 초록, error: 빨강)
+- 토스트를 사용하는 페이지는 반드시 `toast.css` + `toast.js`를 먼저 로드해야 한다
+```html
+<link rel="stylesheet" th:href="@{/css/toast.css}">
+...
+<script th:src="@{/js/toast.js}"></script>
+<script th:src="@{/js/[page].js}"></script>
+```
+
 ## 카테고리 관리 페이지 (`/settings/category`)
 
 **파일 구조**
@@ -129,16 +155,22 @@ Each page includes `style.css` + `sidebar.css` + a page-specific CSS file. The p
 - 대분류 전체 목록은 `allParents`, 소분류 전체 목록은 `allChildren` 변수에 캐싱
 - 검색은 클라이언트 사이드 필터링 (`filterParents` / `filterChildren`) — 추가 API 호출 없음
 - 대분류 클릭 시 소분류 패널 로드, 다른 대분류 선택 시 검색어·목록 초기화
+- 모달 모드: `'add-parent' | 'edit-parent' | 'add-child' | 'edit-child'`
+- 모달 저장 버튼 텍스트: 등록 모드 → `저장`, 수정 모드 → `수정`
+- 모달 닫기: 취소 버튼 또는 ESC 키만 가능 (오버레이 클릭 닫기 없음)
+- API 성공·실패 시 `showToast()` 호출로 피드백
+- 등록·수정 성공 시 `apiLoadParents()` / `apiLoadChildren()` 재호출로 목록 갱신
 
 **DTO 구조**
 - `ParentCategoryRegDto`: `{ name, orderType, orderNum }`
+- `ParentCategoryUpdDto`: `{ id, name, orderNum }`
 - `ParentCategoryResDto`: `{ id, name, parentId, orderNum }`
 - `CategoryRegDto`: `{ parentId, name, orderType, orderNum }`
 - `CategoryResDto`: `{ id, name, parentId, orderNum }`
 
 **미연동 API (백엔드 미구현)**
-- `PUT /api/categories/{id}` — 수정 (`apiUpdate` 함수 존재)
-- `DELETE /api/categories/{id}` — 삭제 (`apiDelete` 함수 존재)
+- `PUT /api/categories/{id}` — 소분류 수정 (`apiUpdate` 함수 존재, 소분류 edit-child 모드에서 호출)
+- `DELETE /api/categories/{id}` — 카테고리 삭제 (`apiDelete` 함수 존재, 대분류·소분류 모두 동일 경로 사용)
 
 ## CSS Naming
 

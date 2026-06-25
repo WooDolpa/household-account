@@ -46,6 +46,11 @@ dependencies {
 
 /* ----- Query DSL 설정 ----- */
 
+// QClass 생성 경로 지정
+tasks.withType(JavaCompile).configureEach {
+    options.generatedSourceOutputDirectory = file('src/main/generated')
+}
+
 // gradle clean 시 QClass 전부 삭제
 clean {	delete file('src/main/generated')}
 
@@ -55,6 +60,9 @@ ext.profile = (!project.hasProperty('profile') || !profile) ? 'local' : profile
 // 리소스 디렉토리 추가
 sourceSets {
     main {
+        java {
+            srcDirs += ['src/main/generated']
+        }
         resources {
             srcDirs = ["src/main/resources", "src/main/resources/${profile}"]
         }
