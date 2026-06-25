@@ -168,4 +168,8 @@ public class CategoryService {
                     .build();
         }).toList();
     }
+
+    public void deleteParentCategory(Integer id) {
+
+    }
 }
