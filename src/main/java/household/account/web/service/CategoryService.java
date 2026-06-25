@@ -47,7 +47,7 @@ public class CategoryService {
             list.forEach(Category::increaseOrderNum);
         }else if(OrderType.Auto.equals(orderType)) {
             Long totalCount = categoryRepository.findParentCategoryCount();
-            orderNum = totalCount.intValue();
+            orderNum = (totalCount.intValue() + 1);
         }
 
         Category category = Category.builder()
@@ -105,7 +105,7 @@ public class CategoryService {
             list.forEach(Category::increaseOrderNum);
         }else if(OrderType.Auto.equals(orderType)) {
             Long totalCount = categoryRepository.findByParentIdCount(dto.getParentId());
-            orderNum = totalCount.intValue();
+            orderNum = (totalCount.intValue() + 1);
         }
 
         Category category = Category.builder()
