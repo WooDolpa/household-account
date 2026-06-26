@@ -55,6 +55,7 @@ Services throw `CustomException(ExceptionCode)`. `CustomExceptionHandler` (`@Con
 **Enums**
 - `DataStatus` — `Yes("Y")` / `No("N")`. Persisted as `"Y"`/`"N"` via `DataStatusConverter`. Default on new records is `DataStatus.Yes`.
 - `OrderType` — `Auto("auto")` / `Manual("manual")`. Used only in service logic, not persisted.
+- `ReceiptType` — `F("F")` 고정 / `O("O")` 일회성. Persisted as `"F"`/`"O"` via `ReceiptTypeConverter`.
 
 ## Package Structure
 
@@ -181,6 +182,44 @@ showToast('메시지', 'success'); // 또는 'error'
 - `apiUpdateChild(id, body)` — 소분류 수정 (`PUT /category`, `selectedParentId` 포함)
 - `apiDeleteParent(id, item)` — 대분류 삭제 (`DELETE /category/parent/{id}`, 선택된 소분류 패널 초기화)
 - `apiDelete(id, item)` — 소분류 삭제 (`DELETE /category/{id}`, 삭제 후 `apiLoadChildren` 재호출)
+
+## 사용내역 관리 페이지 (`/settings/receipt`)
+
+**파일 구조**
+- `templates/settings/receipt.html`
+- `static/css/receipt.css`
+- `static/js/receipt.js`
+
+**Receipt 엔티티 주요 필드**
+- `id` — PK
+- `name` — 사용명 (max 32)
+- `receiptType` — 사용구분 (`ReceiptType.F` 고정 / `ReceiptType.O` 일회성)
+- `amount` — 금액 (Integer)
+- `usedDate` — 사용일 (yyyyMMdd 형식 String)
+- `dataStatus` — soft delete 상태
+- `category` — 소분류 Category (ManyToOne LAZY)
+
+**주요 동작 방식**
+- 목록은 JS에서 API 호출로 렌더링 (현재 더미 데이터로 UI 선구현, 백엔드 미구현)
+- 카드 그리드 레이아웃 (3열), 페이지네이션 지원 (`pageSize: 12`)
+- 필터: 기간(startDate~endDate), 카테고리(대분류→소분류 연동 select), 명칭 검색
+- 삭제 시 카드 내 인라인 확인 UI 표시 (`receipt-card--confirming` 클래스 토글)
+- 모달 모드: `'add' | 'edit'`, 저장 버튼 텍스트: 등록 → `저장`, 수정 → `수정`
+- 모달 닫기: 취소 버튼 또는 ESC 키만 가능
+- 카테고리는 기존 `/category/parent/list`, `/category/list?parentId=` API 활용
+
+**DTO 구조 (백엔드 미구현)**
+- 등록 body: `{ name, receiptType("F"/"O"), amount, usedDate(yyyyMMdd), categoryId }`
+- 수정 body: `{ id, name, receiptType, amount, usedDate, categoryId }`
+- 목록 query: `startDate, endDate, categoryId, name, page, size`
+- 목록 응답: `{ code, message, data: { content:[...], totalPages, totalElements, currentPage, pageSize } }`
+- content 항목: `{ id, name, receiptType, receiptTypeLabel, amount, usedDate, categoryId, categoryName, parentCategoryName }`
+
+**receipt.js 주요 API 함수 (백엔드 연동 대기)**
+- `apiSearch()` — `GET /receipt/list`
+- `apiCreate(body)` — `POST /receipt`
+- `apiUpdate(id, body)` — `PUT /receipt`
+- `apiDelete(id, card)` — `DELETE /receipt/{id}`
 
 ## CSS Naming
 
