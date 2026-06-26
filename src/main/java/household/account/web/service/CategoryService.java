@@ -106,9 +106,10 @@ public class CategoryService {
                 list.forEach(Category :: decreaseOrderNum);
             }
 
-            findCategory.changeName(dto.getName());
             findCategory.changeOrderNum(dto.getOrderNum());
         }
+
+        findCategory.changeName(dto.getName());
     }
 
     /**
@@ -119,7 +120,7 @@ public class CategoryService {
     @Transactional
     public void deleteParentCategory(Integer id) {
 
-        Category findCategory = categoryRepository.findById(id)
+        Category findCategory = categoryRepository.findCategoryById(id)
                 .orElseThrow(() -> new CustomException(ExceptionCode.PARENT_CATEGORY_NOT_FOUND));
 
         if(findCategory.getParentId() != null) {
@@ -199,5 +200,56 @@ public class CategoryService {
                     .orderNum(category.getOrderNum())
                     .build();
         }).toList();
+    }
+
+    /**
+     * 소분류 수정
+     *
+     * @param dto
+     */
+    @Transactional
+    public void updateCategory(CategoryDto.CategoryUpdDto dto) {
+
+        Category findCategory = categoryRepository.findById(dto.getId())
+                .orElseThrow(() -> new CustomException(ExceptionCode.CATEGORY_NOT_FOUND));
+
+        Integer originalOrderNum = findCategory.getOrderNum();
+        Integer newOrderNum = dto.getOrderNum();
+
+        if(!Objects.equals(originalOrderNum, newOrderNum)) {
+            if(originalOrderNum > newOrderNum) {
+                List<Category> list = categoryRepository.findCategoryListByParentIdAndOrderNumGoeAndLt(dto.getParentId(), newOrderNum, originalOrderNum)
+                        .orElse(new ArrayList<>());
+                list.forEach(Category :: increaseOrderNum);
+            }else {
+                List<Category> list = categoryRepository.findCategoryListByParentIdAndOrderNumGtAndLoe(dto.getParentId(), originalOrderNum, newOrderNum)
+                        .orElse(new ArrayList<>());
+                list.forEach(Category :: decreaseOrderNum);
+            }
+
+            findCategory.changeOrderNum(dto.getOrderNum());
+        }
+
+        findCategory.changeName(dto.getName());
+    }
+
+    /**
+     * 소분류 삭제
+     *
+     * @param id
+     */
+    @Transactional
+    public void deleteCategory(Integer id) {
+
+        Category findCategory = categoryRepository.findCategoryById(id)
+                .orElseThrow(() -> new CustomException(ExceptionCode.CATEGORY_NOT_FOUND));
+
+        // 순번 재정렬 처리
+        categoryRepository.findCategoryListByParentIdAndDataStatusNotAndOrderNumGt(findCategory.getParentId(), findCategory.getOrderNum())
+                .ifPresent(categoryList -> {
+                   categoryList.forEach(Category :: decreaseOrderNum);
+                });
+
+        findCategory.delete();
     }
 }

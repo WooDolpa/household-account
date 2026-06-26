@@ -61,7 +61,7 @@ public class CategoryController {
      * @return
      */
     @DeleteMapping(path = "/parent/{id}")
-    public ResponseEntity<String> deleteParentCategory(@PathVariable(name = "id") Integer id) {
+    public ResponseEntity<String> deleteParentCategory(@PathVariable Integer id) {
         categoryService.deleteParentCategory(id);
         return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
     }
@@ -89,5 +89,29 @@ public class CategoryController {
     public ResponseEntity<String> findCategoryList(@RequestParam(name = "parentId") Integer parentId) {
         List<CategoryDto.CategoryResDto> list = categoryService.findCategoryList(parentId);
         return new ResponseEntity<>(ApiResponseDto.makeResponse(list), HttpStatus.OK);
+    }
+
+    /**
+     * 소분류 수정
+     *
+     * @param dto
+     * @return
+     */
+    @PutMapping
+    public ResponseEntity<String> updateCategory(@RequestBody CategoryDto.CategoryUpdDto dto) {
+        categoryService.updateCategory(dto);
+        return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
+    }
+
+    /**
+     * 소분류 삭제
+     *
+     * @param id
+     * @return
+     */
+    @DeleteMapping(path = "/{id}")
+    public ResponseEntity<String> deleteCategory(@PathVariable Integer id) {
+        categoryService.deleteCategory(id);
+        return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
     }
 }

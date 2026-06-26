@@ -19,6 +19,20 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
 
 
     @Override
+    public Optional<Category> findCategoryById(Integer id) {
+
+        Category findCategory = factory.select(category)
+                .from(category)
+                .where(
+                        matchId(id),
+                        category.dataStatus.eq(DataStatus.Yes)
+                )
+                .fetchOne();
+
+        return Optional.ofNullable(findCategory);
+    }
+
+    @Override
     public Optional<Category> findParentByName(String name) {
 
         Category findCategory = factory.select(category)
@@ -196,6 +210,61 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .fetch();
 
         return Optional.ofNullable(list);
+    }
+
+    @Override
+    public Optional<List<Category>> findCategoryListByParentIdAndOrderNumGoeAndLt(Integer parentId, Integer newOrderNum, Integer originalOrderNum) {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        matchParentId(parentId),
+                        category.dataStatus.ne(DataStatus.No),
+                        matchOrderNumGoe(newOrderNum),
+                        matchOrderNumLt(originalOrderNum)
+                )
+                .fetch();
+
+        return Optional.ofNullable(list);
+    }
+
+    @Override
+    public Optional<List<Category>> findCategoryListByParentIdAndOrderNumGtAndLoe(Integer parentId, Integer originalOrderNum, Integer newOrderNum) {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        matchParentId(parentId),
+                        category.dataStatus.ne(DataStatus.No),
+                        matchOrderNumGt(originalOrderNum),
+                        matchOrderNumLoe(newOrderNum)
+                )
+                .fetch();
+
+        return Optional.ofNullable(list);
+    }
+
+    @Override
+    public Optional<List<Category>> findCategoryListByParentIdAndDataStatusNotAndOrderNumGt(Integer parentId, Integer orderNum) {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        matchParentId(parentId),
+                        category.dataStatus.ne(DataStatus.No),
+                        matchOrderNumGt(orderNum)
+                )
+                .fetch();
+
+        return Optional.ofNullable(list);
+    }
+
+
+    private BooleanExpression matchId(Integer id) {
+        if(id != null){
+            return category.id.eq(id);
+        }
+        return null;
     }
 
     private BooleanExpression matchName(String name) {

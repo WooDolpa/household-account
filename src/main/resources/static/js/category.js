@@ -140,8 +140,10 @@
             apiCreateParent({ name: name, orderType: orderType, orderNum: orderNum });
         } else if (modalMode === 'add-child') {
             apiCreate({ parentId: selectedParentId, name: name, orderType: orderType, orderNum: orderNum });
-        } else if (modalMode === 'edit-parent' || modalMode === 'edit-child') {
-            apiUpdate(editTargetId, { name: name, orderType: orderType, orderNum: orderNum });
+        } else if (modalMode === 'edit-parent') {
+            apiUpdateParent(editTargetId, { name: name, orderNum: orderNum });
+        } else if (modalMode === 'edit-child') {
+            apiUpdateChild(editTargetId, { name: name, orderNum: orderNum });
         }
     }
 
@@ -228,7 +230,7 @@
         });
     }
 
-    function apiUpdate(id, body) {
+    function apiUpdateParent(id, body) {
         fetch('/category/parent', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -242,6 +244,26 @@
             closeModal();
             showToast('수정되었습니다.', 'success');
             apiLoadParents();
+        })
+        .catch(function () {
+            showToast('수정에 실패했습니다.', 'error');
+        });
+    }
+
+    function apiUpdateChild(id, body) {
+        fetch('/category', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, parentId: selectedParentId, name: body.name, orderNum: body.orderNum })
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error();
+            return res.json();
+        })
+        .then(function () {
+            closeModal();
+            showToast('수정되었습니다.', 'success');
+            apiLoadChildren(selectedParentId);
         })
         .catch(function () {
             showToast('수정에 실패했습니다.', 'error');
@@ -263,14 +285,11 @@
     }
 
     function apiDelete(id, item) {
-        fetch('/api/categories/' + id, { method: 'DELETE' })
+        fetch('/category/' + id, { method: 'DELETE' })
         .then(function (res) {
-            if (res.status === 400) {
-                showDeleteError(item, '소분류가 있어 삭제할 수 없습니다');
-                return;
-            }
             if (!res.ok) throw new Error();
-            item.remove();
+            showToast('삭제되었습니다.', 'success');
+            apiLoadChildren(selectedParentId);
         })
         .catch(function () {
             item.classList.remove('category-item--confirming');

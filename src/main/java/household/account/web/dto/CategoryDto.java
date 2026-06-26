@@ -65,4 +65,22 @@ public class CategoryDto {
             this.orderNum = orderNum;
         }
     }
+
+    @Getter
+    @NoArgsConstructor
+    public static class CategoryUpdDto {
+
+        private Integer id;
+        private String name;
+        private Integer parentId;
+        private Integer orderNum;
+
+        @Builder
+        public CategoryUpdDto(Integer id, String name, Integer parentId, Integer orderNum) {
+            this.id = id;
+            this.name = name;
+            this.parentId = parentId;
+            this.orderNum = orderNum;
+        }
+    }
 }
