@@ -54,6 +54,12 @@ public class CategoryController {
         return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
     }
 
+    /**
+     * 대분류 삭제
+     *
+     * @param id
+     * @return
+     */
     @DeleteMapping(path = "/parent/{id}")
     public ResponseEntity<String> deleteParentCategory(@PathVariable(name = "id") Integer id) {
         categoryService.deleteParentCategory(id);

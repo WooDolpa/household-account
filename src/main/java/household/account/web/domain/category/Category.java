@@ -66,4 +66,9 @@ public class Category extends BaseEntity {
             this.dataStatus = dataStatus;
         }
     }
+
+    public void delete() {
+        this.orderNum = 0;
+        this.dataStatus = DataStatus.No;
+    }
 }

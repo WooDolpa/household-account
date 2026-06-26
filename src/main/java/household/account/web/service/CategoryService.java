@@ -112,6 +112,38 @@ public class CategoryService {
     }
 
     /**
+     * 대분류 삭제
+     *
+     * @param id
+     */
+    @Transactional
+    public void deleteParentCategory(Integer id) {
+
+        Category findCategory = categoryRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ExceptionCode.PARENT_CATEGORY_NOT_FOUND));
+
+        if(findCategory.getParentId() != null) {
+            throw new CustomException(ExceptionCode.BAD_REQUEST);
+        }
+
+        // 소분류 항목들 전부 삭제처리
+        categoryRepository.findByDataStatusNotParentId(findCategory.getId())
+                .ifPresent(childList -> {
+                    childList.forEach(Category::delete);
+                });
+
+        // 순번 재정렬 처리
+        categoryRepository.findParentCategoryListByDataStatusNotAndOrderNumGt(findCategory.getOrderNum())
+                .ifPresent(categoryList -> {
+                    categoryList.forEach(Category::decreaseOrderNum);
+                });
+
+        // 삭제처리
+        findCategory.delete();
+
+    }
+
+    /**
      * 소분류 등록
      *
      * @param dto
@@ -167,9 +199,5 @@ public class CategoryService {
                     .orderNum(category.getOrderNum())
                     .build();
         }).toList();
-    }
-
-    public void deleteParentCategory(Integer id) {
-
     }
 }

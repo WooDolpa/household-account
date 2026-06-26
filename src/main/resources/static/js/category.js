@@ -248,6 +248,20 @@
         });
     }
 
+    function apiDeleteParent(id, item) {
+        fetch('/category/parent/' + id, { method: 'DELETE' })
+        .then(function (res) {
+            if (!res.ok) throw new Error();
+            showToast('삭제되었습니다.', 'success');
+            if (selectedParentId === id) resetChildPanel();
+            apiLoadParents();
+        })
+        .catch(function () {
+            item.classList.remove('category-item--confirming');
+            showToast('삭제에 실패했습니다.', 'error');
+        });
+    }
+
     function apiDelete(id, item) {
         fetch('/api/categories/' + id, { method: 'DELETE' })
         .then(function (res) {
@@ -257,7 +271,6 @@
             }
             if (!res.ok) throw new Error();
             item.remove();
-            if (selectedParentId === id) resetChildPanel();
         })
         .catch(function () {
             item.classList.remove('category-item--confirming');
@@ -396,7 +409,7 @@
             return;
         }
         if (e.target.classList.contains('confirm-btn')) {
-            apiDelete(Number(item.dataset.id), item);
+            apiDeleteParent(Number(item.dataset.id), item);
             return;
         }
         if (e.target.classList.contains('cancel-btn')) {

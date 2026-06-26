@@ -11,9 +11,11 @@ public interface CategoryCustomRepository {
     Long findParentCategoryCount();
     Optional<List<Category>> findParentCategoryListByOrderNumGoeAndLt(Integer newOrderNum, Integer originalOrderNum);
     Optional<List<Category>> findParentCategoryListByOrderNumGtAndLoe(Integer originalOrderNum, Integer newOrderNum);
+    Optional<List<Category>> findParentCategoryListByDataStatusNotAndOrderNumGt(Integer orderNum);
     Optional<List<Category>> findParentCategoryList();
     Optional<Category> findByNameAndParentId(String name, Integer parentId);
     Optional<List<Category>> findByNameAndParentIdOrderNumGoe(String name, Integer parentId, Integer orderNum);
     Long findByParentIdCount(Integer parentId);
     Optional<List<Category>> findCategoryListByParentId(Integer parentId);
+    Optional<List<Category>> findByDataStatusNotParentId(Integer parentId);
 }

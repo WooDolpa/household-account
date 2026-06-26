@@ -69,6 +69,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         category.dataStatus.ne(DataStatus.No),
+                        category.parentId.isNull(),
                         matchOrderNumGoe(newOrderNum),
                         matchOrderNumLt(originalOrderNum)
                 )
@@ -84,8 +85,24 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         category.dataStatus.ne(DataStatus.No),
+                        category.parentId.isNull(),
                         matchOrderNumGt(originalOrderNum),
                         matchOrderNumLoe(newOrderNum)
+                )
+                .fetch();
+
+        return Optional.ofNullable(list);
+    }
+
+    @Override
+    public Optional<List<Category>> findParentCategoryListByDataStatusNotAndOrderNumGt(Integer orderNum) {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        category.dataStatus.ne(DataStatus.No),
+                        category.parentId.isNull(),
+                        matchOrderNumGt(orderNum)
                 )
                 .fetch();
 
@@ -162,6 +179,20 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                         category.dataStatus.ne(DataStatus.No)
                 )
                 .orderBy(category.orderNum.asc())
+                .fetch();
+
+        return Optional.ofNullable(list);
+    }
+
+    @Override
+    public Optional<List<Category>> findByDataStatusNotParentId(Integer parentId) {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        matchParentId(parentId),
+                        category.dataStatus.ne(DataStatus.No)
+                )
                 .fetch();
 
         return Optional.ofNullable(list);
