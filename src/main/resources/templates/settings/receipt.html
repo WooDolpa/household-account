@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용내역 관리 - 가계부</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebar.css}">
+    <link rel="stylesheet" th:href="@{/css/receipt.css}">
+    <link rel="stylesheet" th:href="@{/css/toast.css}">
+</head>
+<body>
+
+<header class="header">
+    <span class="header__title">가계부</span>
+</header>
+
+<div class="layout">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+
+    <main class="main">
+        <div class="page-header">
+            <h1 class="page-title">사용내역 관리</h1>
+            <button class="btn btn--primary" id="addReceiptBtn">+ 등록</button>
+        </div>
+
+        <!-- 필터 -->
+        <div class="filter-panel">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label class="filter-label">기간</label>
+                    <div class="filter-date-range">
+                        <input type="date" class="form-input" id="filterStartDate">
+                        <span class="filter-date-sep">~</span>
+                        <input type="date" class="form-input" id="filterEndDate">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">카테고리</label>
+                    <div class="filter-select-wrap">
+                        <select class="form-select" id="filterParentCategory">
+                            <option value="">대분류 전체</option>
+                        </select>
+                        <select class="form-select" id="filterChildCategory">
+                            <option value="">소분류 전체</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">명칭</label>
+                    <input type="text" class="form-input filter-name-input" id="filterName" placeholder="사용명 검색">
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn--primary" id="searchBtn">조회</button>
+                    <button class="btn btn--secondary" id="resetBtn">초기화</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 카드 목록 -->
+        <div class="receipt-grid" id="receiptGrid"></div>
+        <div class="receipt-empty hidden" id="receiptEmpty">조회된 사용내역이 없습니다</div>
+
+        <!-- 페이지네이션 -->
+        <div class="pagination" id="pagination"></div>
+
+        <!-- 모달 -->
+        <div class="modal-overlay hidden" id="modalOverlay">
+            <div class="modal">
+                <h2 class="modal__title" id="modalTitle">사용내역 등록</h2>
+
+                <div class="form-group">
+                    <label class="form-label" for="modalName">사용명</label>
+                    <input type="text" class="form-input" id="modalName" placeholder="사용명을 입력하세요" maxlength="32">
+                    <span class="form-error hidden" id="modalNameError">사용명을 입력해 주세요</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modalAmount">금액</label>
+                    <input type="number" class="form-input" id="modalAmount" placeholder="금액을 입력하세요" min="0">
+                    <span class="form-error hidden" id="modalAmountError">금액을 입력해 주세요</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modalUsedDate">사용일</label>
+                    <input type="date" class="form-input" id="modalUsedDate">
+                    <span class="form-error hidden" id="modalUsedDateError">사용일을 선택해 주세요</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modalParentCategory">대분류</label>
+                    <select class="form-select" id="modalParentCategory">
+                        <option value="">대분류를 선택하세요</option>
+                    </select>
+                    <span class="form-error hidden" id="modalParentError">대분류를 선택해 주세요</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modalChildCategory">소분류</label>
+                    <select class="form-select" id="modalChildCategory" disabled>
+                        <option value="">소분류를 선택하세요</option>
+                    </select>
+                    <span class="form-error hidden" id="modalChildError">소분류를 선택해 주세요</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">사용구분</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="modalReceiptType" value="O" checked>
+                            <span>일회성</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="modalReceiptType" value="F">
+                            <span>고정</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal__footer">
+                    <button type="button" class="btn btn--secondary" id="modalCancelBtn">취소</button>
+                    <button type="button" class="btn btn--primary" id="modalSaveBtn">저장</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script th:src="@{/js/sidebar.js}"></script>
+<script th:src="@{/js/toast.js}"></script>
+<script th:src="@{/js/receipt.js}"></script>
+</body>
+</html>

@@ -77,22 +77,27 @@ Static assets: `src/main/resources/static/css/` and `src/main/resources/static/j
 **View:**
 - `GET /` — 홈 (`HomeController`)
 - `GET /settings/category` — 카테고리 관리 (`SettingsController`)
+- `GET /settings/receipt` — 사용내역 관리 (`SettingsController`)
 
 **REST API — Implemented & Connected (`CategoryController`):**
 - `POST /category/parent` — 대분류 등록 (body: `{ name, orderType, orderNum }`)
 - `GET /category/parent/list` — 대분류 목록 조회 (응답: `{ code, message, data: [...] }`)
 - `PUT /category/parent` — 대분류 수정 (body: `{ id, name, orderNum }`, 응답: `{ code, message }`)
+- `DELETE /category/parent/{id}` — 대분류 삭제 (소분류 일괄 soft delete + 순번 재정렬)
 - `POST /category` — 소분류 등록 (body: `{ parentId, name, orderType, orderNum }`)
 - `GET /category/list?parentId={parentId}` — 소분류 목록 조회 (응답: `{ code, message, data: [...] }`)
+- `PUT /category` — 소분류 수정 (body: `{ id, parentId, name, orderNum }`)
+- `DELETE /category/{id}` — 소분류 삭제 (순번 재정렬)
 
-**REST API — Frontend calls exist, backend not yet implemented:**
-- `PUT /api/categories/{id}` — 소분류 수정
-- `DELETE /api/categories/{id}` — 카테고리 삭제 (소분류 있으면 400)
+**REST API — 사용내역 (`ReceiptController`, 백엔드 미구현):**
+- `GET /receipt/list` — 목록 조회 (query: startDate, endDate, categoryId, name, page, size / 응답: `{ code, message, data: { content:[...], totalPages, totalElements, currentPage, pageSize } }`)
+- `POST /receipt` — 등록 (body: `{ name, receiptType("F"/"O"), amount, usedDate(yyyyMMdd), categoryId }`)
+- `PUT /receipt` — 수정 (body: `{ id, name, receiptType, amount, usedDate, categoryId }`)
+- `DELETE /receipt/{id}` — 삭제
 
 **Not yet implemented:**
 - `/account/income`, `/account/expense` — 수입/지출 입력
 - `/stats/monthly`, `/stats/category` — 통계
-- `/settings/account` — 계좌 관리
 
 ## Page Layout Pattern
 
@@ -166,11 +171,16 @@ showToast('메시지', 'success'); // 또는 'error'
 - `ParentCategoryUpdDto`: `{ id, name, orderNum }`
 - `ParentCategoryResDto`: `{ id, name, parentId, orderNum }`
 - `CategoryRegDto`: `{ parentId, name, orderType, orderNum }`
+- `CategoryUpdDto`: `{ id, parentId, name, orderNum }`
 - `CategoryResDto`: `{ id, name, parentId, orderNum }`
 
-**미연동 API (백엔드 미구현)**
-- `PUT /api/categories/{id}` — 소분류 수정 (`apiUpdate` 함수 존재, 소분류 edit-child 모드에서 호출)
-- `DELETE /api/categories/{id}` — 카테고리 삭제 (`apiDelete` 함수 존재, 대분류·소분류 모두 동일 경로 사용)
+**category.js 주요 API 함수**
+- `apiLoadParents()` / `apiLoadChildren(parentId)` — 목록 갱신
+- `apiCreateParent(body)` / `apiCreate(body)` — 등록
+- `apiUpdateParent(id, body)` — 대분류 수정 (`PUT /category/parent`)
+- `apiUpdateChild(id, body)` — 소분류 수정 (`PUT /category`, `selectedParentId` 포함)
+- `apiDeleteParent(id, item)` — 대분류 삭제 (`DELETE /category/parent/{id}`, 선택된 소분류 패널 초기화)
+- `apiDelete(id, item)` — 소분류 삭제 (`DELETE /category/{id}`, 삭제 후 `apiLoadChildren` 재호출)
 
 ## CSS Naming
 

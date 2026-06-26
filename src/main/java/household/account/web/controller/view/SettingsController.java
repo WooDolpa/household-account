@@ -12,4 +12,9 @@ public class SettingsController {
     public String category() {
         return "settings/category";
     }
+
+    @GetMapping(path = "/receipt")
+    public String receipt() {
+        return "settings/receipt";
+    }
 }
