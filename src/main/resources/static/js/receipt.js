@@ -6,6 +6,9 @@
     var pageSize = 12;
     var modalMode = null; // 'add' | 'edit'
     var editTargetId = null;
+    var startPicker = null;
+    var endPicker = null;
+    var settingQuick = false;
 
     var receiptGrid    = document.getElementById('receiptGrid');
     var receiptEmpty   = document.getElementById('receiptEmpty');
@@ -40,8 +43,52 @@
     /* ─── 초기화 ─────────────────────────────────────────── */
 
     function init() {
+        initDatePickers();
         loadCategories();
         renderPage(DUMMY_DATA);
+    }
+
+    /* ─── Flatpickr 초기화 ───────────────────────────────── */
+
+    function initDatePickers() {
+        startPicker = flatpickr('#filterStartDate', {
+            locale: 'ko',
+            dateFormat: 'Y.m.d',
+            disableMobile: true,
+            onChange: function (selectedDates) {
+                if (selectedDates.length > 0) {
+                    endPicker.set('minDate', selectedDates[0]);
+                } else {
+                    endPicker.set('minDate', null);
+                }
+                if (!settingQuick) clearQuickActive();
+            }
+        });
+
+        endPicker = flatpickr('#filterEndDate', {
+            locale: 'ko',
+            dateFormat: 'Y.m.d',
+            disableMobile: true,
+            onChange: function () {
+                if (!settingQuick) clearQuickActive();
+            }
+        });
+    }
+
+    function clearQuickActive() {
+        document.querySelectorAll('.btn-quick').forEach(function (btn) {
+            btn.classList.remove('btn-quick--active');
+        });
+    }
+
+    function setQuickDate(start, end, activeBtn) {
+        settingQuick = true;
+        startPicker.setDate(start, true);
+        endPicker.set('minDate', start);
+        endPicker.setDate(end, true);
+        settingQuick = false;
+        clearQuickActive();
+        activeBtn.classList.add('btn-quick--active');
     }
 
     /* ─── 카테고리 로드 (기존 API 활용) ──────────────────── */
@@ -385,14 +432,37 @@
     });
 
     document.getElementById('resetBtn').addEventListener('click', function () {
-        document.getElementById('filterStartDate').value = '';
-        document.getElementById('filterEndDate').value = '';
+        startPicker.clear();
+        endPicker.clear();
+        endPicker.set('minDate', null);
+        clearQuickActive();
         filterParentEl.value = '';
         filterChildEl.innerHTML = '<option value="">소분류 전체</option>';
         filterChildEl.disabled = true;
         document.getElementById('filterName').value = '';
         currentPage = 0;
         renderPage(DUMMY_DATA);
+    });
+
+    document.querySelectorAll('.btn-quick').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var now = new Date();
+            var quick = this.dataset.quick;
+            var start, end;
+
+            if (quick === 'this-month') {
+                start = new Date(now.getFullYear(), now.getMonth(), 1);
+                end   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            } else if (quick === 'last-month') {
+                start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                end   = new Date(now.getFullYear(), now.getMonth(), 0);
+            } else if (quick === 'last-3-months') {
+                start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+                end   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            }
+
+            setQuickDate(start, end, this);
+        });
     });
 
     filterParentEl.addEventListener('change', function () {

@@ -6,7 +6,7 @@ import household.account.web.enums.DataStatus;
 import household.account.web.enums.OrderType;
 import household.account.web.exception.CustomException;
 import household.account.web.exception.ExceptionCode;
-import household.account.web.repository.CategoryRepository;
+import household.account.web.repository.category.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

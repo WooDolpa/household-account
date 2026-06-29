@@ -48,6 +48,42 @@
     color: #64748b;
 }
 
+.filter-date-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.filter-date-quick {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-quick {
+    padding: 6px 13px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #64748b;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.btn-quick:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.btn-quick--active {
+    background-color: #4a6cf7;
+    border-color: #4a6cf7;
+    color: #ffffff;
+}
+
 .filter-date-range {
     display: flex;
     align-items: center;
@@ -58,6 +94,17 @@
     font-size: 13px;
     color: #94a3b8;
     flex-shrink: 0;
+}
+
+.filter-date-input {
+    width: 130px;
+    cursor: pointer;
+}
+
+.filter-divider {
+    height: 1px;
+    background-color: #f1f5f9;
+    margin: 16px 0;
 }
 
 .filter-select-wrap {
@@ -423,4 +470,24 @@
 
 .btn--danger:hover {
     background-color: #fff1f2;
+}
+
+/* =====================
+   Flatpickr Override
+   ===================== */
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.selected:focus {
+    background: #4a6cf7;
+    border-color: #4a6cf7;
+}
+
+.flatpickr-day.today {
+    border-color: #4a6cf7;
+}
+
+.flatpickr-day.today:hover {
+    background: #4a6cf7;
+    border-color: #4a6cf7;
+    color: #ffffff;
 }

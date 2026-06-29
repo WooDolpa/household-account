@@ -190,6 +190,18 @@ showToast('메시지', 'success'); // 또는 'error'
 - `static/css/receipt.css`
 - `static/js/receipt.js`
 
+**외부 라이브러리 (CDN)**
+- flatpickr — 날짜 선택 달력 라이브러리 (한국어 locale 포함)
+- CSS: `https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css` → `<head>`에 로드
+- JS 로드 순서 (flatpickr는 반드시 sidebar.js 앞에):
+```html
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+<script th:src="@{/js/toast.js}"></script>
+<script th:src="@{/js/receipt.js}"></script>
+```
+
 **Receipt 엔티티 주요 필드**
 - `id` — PK
 - `name` — 사용명 (max 32)
@@ -202,11 +214,27 @@ showToast('메시지', 'success'); // 또는 'error'
 **주요 동작 방식**
 - 목록은 JS에서 API 호출로 렌더링 (현재 더미 데이터로 UI 선구현, 백엔드 미구현)
 - 카드 그리드 레이아웃 (3열), 페이지네이션 지원 (`pageSize: 12`)
-- 필터: 기간(startDate~endDate), 카테고리(대분류→소분류 연동 select), 명칭 검색
+- 필터 패널: 2행 레이아웃 (`.filter-divider`로 구분)
+  - 1행: 기간 선택 (flatpickr 날짜 입력 2개) + 빠른 선택 버튼 (이번달/저번달/최근 3개월)
+  - 2행: 카테고리(대분류→소분류 연동 select), 명칭 검색, 조회/초기화 버튼
+- 날짜 입력: `type="text" readonly` — flatpickr가 값을 관리 (직접 타이핑 불가)
+- 시작일 선택 시 종료일의 `minDate`를 시작일로 제한 (이전 날짜 선택 불가)
 - 삭제 시 카드 내 인라인 확인 UI 표시 (`receipt-card--confirming` 클래스 토글)
 - 모달 모드: `'add' | 'edit'`, 저장 버튼 텍스트: 등록 → `저장`, 수정 → `수정`
 - 모달 닫기: 취소 버튼 또는 ESC 키만 가능
 - 카테고리는 기존 `/category/parent/list`, `/category/list?parentId=` API 활용
+
+**필터 날짜 관련 JS 변수/함수**
+- `startPicker` / `endPicker` — flatpickr 인스턴스 (전역)
+- `settingQuick` — 빠른 선택 버튼 클릭 시 `true`로 설정; flatpickr `onChange`가 `setDate()` 호출로 발화될 때 `clearQuickActive()`를 막는 플래그
+- `initDatePickers()` — flatpickr 초기화 (`init()`에서 호출)
+- `clearQuickActive()` — `.btn-quick--active` 클래스 전체 제거
+- `setQuickDate(start, end, activeBtn)` — 날짜 범위 설정 후 해당 버튼에 `--active` 클래스 추가
+
+**빠른 선택 버튼 (`data-quick` 값)**
+- `this-month` — 이번달 1일 ~ 말일
+- `last-month` — 저번달 1일 ~ 말일
+- `last-3-months` — 3개월 전 1일 ~ 이번달 말일
 
 **DTO 구조 (백엔드 미구현)**
 - 등록 body: `{ name, receiptType("F"/"O"), amount, usedDate(yyyyMMdd), categoryId }`

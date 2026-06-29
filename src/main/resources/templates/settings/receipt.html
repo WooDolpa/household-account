@@ -8,6 +8,7 @@
     <link rel="stylesheet" th:href="@{/css/sidebar.css}">
     <link rel="stylesheet" th:href="@{/css/receipt.css}">
     <link rel="stylesheet" th:href="@{/css/toast.css}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
 
@@ -29,12 +30,22 @@
             <div class="filter-row">
                 <div class="filter-group">
                     <label class="filter-label">기간</label>
-                    <div class="filter-date-range">
-                        <input type="date" class="form-input" id="filterStartDate">
-                        <span class="filter-date-sep">~</span>
-                        <input type="date" class="form-input" id="filterEndDate">
+                    <div class="filter-date-wrap">
+                        <div class="filter-date-range">
+                            <input type="text" class="form-input filter-date-input" id="filterStartDate" placeholder="시작일 선택" readonly>
+                            <span class="filter-date-sep">~</span>
+                            <input type="text" class="form-input filter-date-input" id="filterEndDate" placeholder="종료일 선택" readonly>
+                        </div>
+                        <div class="filter-date-quick">
+                            <button class="btn-quick" data-quick="this-month">이번달</button>
+                            <button class="btn-quick" data-quick="last-month">저번달</button>
+                            <button class="btn-quick" data-quick="last-3-months">최근 3개월</button>
+                        </div>
                     </div>
                 </div>
+            </div>
+            <div class="filter-divider"></div>
+            <div class="filter-row">
                 <div class="filter-group">
                     <label class="filter-label">카테고리</label>
                     <div class="filter-select-wrap">
@@ -127,6 +138,8 @@
     </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
 <script th:src="@{/js/sidebar.js}"></script>
 <script th:src="@{/js/toast.js}"></script>
 <script th:src="@{/js/receipt.js}"></script>
