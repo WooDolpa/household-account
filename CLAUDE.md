@@ -56,6 +56,8 @@ Services throw `CustomException(ExceptionCode)`. `CustomExceptionHandler` (`@Con
 - `DataStatus` — `Yes("Y")` / `No("N")`. Persisted as `"Y"`/`"N"` via `DataStatusConverter`. Default on new records is `DataStatus.Yes`.
 - `OrderType` — `Auto("auto")` / `Manual("manual")`. Used only in service logic, not persisted.
 - `ReceiptType` — `F("F")` 고정 / `O("O")` 일회성. Persisted as `"F"`/`"O"` via `ReceiptTypeConverter`.
+- `PaymentType` — `CARD("C")` / `CASH("M")`. Persisted via `PaymentTypeConverter`. 키 미일치 시 기본값 CARD.
+- `Installment` — `"001"` 일시불 ~ `"012"` 12개월 할부. Persisted via `InstallmentConverter`. 키 미일치 시 기본값 `"001"`.
 
 ## Package Structure
 
@@ -90,11 +92,11 @@ Static assets: `src/main/resources/static/css/` and `src/main/resources/static/j
 - `PUT /category` — 소분류 수정 (body: `{ id, parentId, name, orderNum }`)
 - `DELETE /category/{id}` — 소분류 삭제 (순번 재정렬)
 
-**REST API — 사용내역 (`ReceiptController`, 백엔드 미구현):**
-- `GET /receipt/list` — 목록 조회 (query: startDate, endDate, categoryId, name, page, size / 응답: `{ code, message, data: { content:[...], totalPages, totalElements, currentPage, pageSize } }`)
-- `POST /receipt` — 등록 (body: `{ name, receiptType("F"/"O"), amount, usedDate(yyyyMMdd), categoryId }`)
-- `PUT /receipt` — 수정 (body: `{ id, name, receiptType, amount, usedDate, categoryId }`)
-- `DELETE /receipt/{id}` — 삭제
+**REST API — 사용내역 (`ReceiptController`):**
+- `GET /receipt/list` — 목록 조회 (query: startDate, endDate, categoryId, name, page, size / 응답: `{ code, message, data: { content:[...], totalPages, totalElements, currentPage, pageSize } }`) **[백엔드 미구현 — 프론트 더미 데이터]**
+- `POST /receipt` — 등록 **[구현 완료]** (body: `{ name, receiptType("F"/"O"), paymentType("C"/"M"), installment("001"~"012"), amount, usedDate(yyyyMMdd), categoryId }`)
+- `PUT /receipt` — 수정 (body: `{ id, name, receiptType, paymentType, installment, amount, usedDate, categoryId }`) **[백엔드 미구현]**
+- `DELETE /receipt/{id}` — 삭제 **[백엔드 미구현]**
 
 **Not yet implemented:**
 - `/account/income`, `/account/expense` — 수입/지출 입력
@@ -191,63 +193,74 @@ showToast('메시지', 'success'); // 또는 'error'
 - `static/js/receipt.js`
 
 **외부 라이브러리 (CDN)**
-- flatpickr — 날짜 선택 달력 라이브러리 (한국어 locale 포함)
-- CSS: `https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css` → `<head>`에 로드
-- JS 로드 순서 (flatpickr는 반드시 sidebar.js 앞에):
+- Air Datepicker v3.6.0 — 날짜 선택 달력 라이브러리
+- CSS: `https://cdn.jsdelivr.net/npm/air-datepicker@3.6.0/air-datepicker.css` → `<head>`에 로드
+- JS 로드 순서 (air-datepicker는 반드시 sidebar.js 앞에):
 ```html
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.6.0/air-datepicker.js"></script>
 <script th:src="@{/js/sidebar.js}"></script>
 <script th:src="@{/js/toast.js}"></script>
 <script th:src="@{/js/receipt.js}"></script>
 ```
+- CDN 로드 시 기본 locale이 마케도니아어로 고정되는 버그 → `receipt.js`에 `localeKo` 객체 직접 정의해 생성자에 전달
+- 모달 위에 달력이 표시되려면 `.air-datepicker-global-container { z-index: 9999 }` CSS 오버라이드 필수 (`.modal-overlay`가 `z-index: 200`)
+- `autoClose: true` — 날짜 선택 후 달력 자동 닫힘
 
 **Receipt 엔티티 주요 필드**
 - `id` — PK
 - `name` — 사용명 (max 32)
 - `receiptType` — 사용구분 (`ReceiptType.F` 고정 / `ReceiptType.O` 일회성)
+- `paymentType` — 결제수단 (`PaymentType.CARD("C")` / `PaymentType.CASH("M")`)
+- `installment` — 할부 (`Installment "001"` 일시불 ~ `"012"` 12개월)
 - `amount` — 금액 (Integer)
 - `usedDate` — 사용일 (yyyyMMdd 형식 String)
 - `dataStatus` — soft delete 상태
 - `category` — 소분류 Category (ManyToOne LAZY)
 
 **주요 동작 방식**
-- 목록은 JS에서 API 호출로 렌더링 (현재 더미 데이터로 UI 선구현, 백엔드 미구현)
-- 카드 그리드 레이아웃 (3열), 페이지네이션 지원 (`pageSize: 12`)
+- 목록은 JS에서 API 호출로 렌더링 (현재 더미 데이터로 UI 선구현, `GET /receipt/list` 백엔드 미구현)
+- 테이블 레이아웃, 고정 높이 600px + 세로 스크롤, thead sticky
+- 레이아웃 순서: 필터 패널 → 총계(`receiptSummary`) → 테이블 컨트롤 → 테이블 → 페이지네이션
 - 필터 패널: 2행 레이아웃 (`.filter-divider`로 구분)
-  - 1행: 기간 선택 (flatpickr 날짜 입력 2개) + 빠른 선택 버튼 (이번달/저번달/최근 3개월)
+  - 1행: 기간 선택 (Air Datepicker 날짜 입력 2개) + 빠른 선택 버튼 (이번달/저번달/최근 3개월)
   - 2행: 카테고리(대분류→소분류 연동 select), 명칭 검색, 조회/초기화 버튼
-- 날짜 입력: `type="text" readonly` — flatpickr가 값을 관리 (직접 타이핑 불가)
-- 시작일 선택 시 종료일의 `minDate`를 시작일로 제한 (이전 날짜 선택 불가)
-- 삭제 시 카드 내 인라인 확인 UI 표시 (`receipt-card--confirming` 클래스 토글)
+- 날짜 입력: `type="text" readonly` — Air Datepicker가 값을 관리 (직접 타이핑 불가), 포맷 `yyyy.MM.dd`
+- 시작일 선택 시 종료일의 `minDate`를 시작일로 제한 (`endPicker.update({minDate: date})`)
+- 삭제 시 테이블 행 아래 인라인 확인 행(`.receipt-row--confirm`) 표시
 - 모달 모드: `'add' | 'edit'`, 저장 버튼 텍스트: 등록 → `저장`, 수정 → `수정`
 - 모달 닫기: 취소 버튼 또는 ESC 키만 가능
-- 카테고리는 기존 `/category/parent/list`, `/category/list?parentId=` API 활용
+- 대분류 select: `SettingsController`가 `parentCategoryList` 모델로 서버사이드 렌더링 (`th:each`) — 필터·모달 모두 적용. API 호출 없음
+- 소분류 select: `GET /category/list?parentId=` API 호출로 동적 로드
+- 금액 입력: `type="text" inputmode="numeric"` — 입력 시 천단위 콤마 자동 포맷, 저장 시 콤마 제거 후 `Number()` 변환
+- 모달 사용일: Air Datepicker (`modalDatePicker`), `selectDate(new Date(...))` / `clear()`로 제어
+- 결제수단: 카드(`C`) / 현금(`M`) 라디오. 현금 선택 시 할부 그룹(`#modalInstallmentGroup`) 숨김, 전송 시 `installment: "001"` 고정
+- 할부: `#modalInstallment` select, 일시불(`001`) ~ 12개월 할부(`012`)
 
-**필터 날짜 관련 JS 변수/함수**
-- `startPicker` / `endPicker` — flatpickr 인스턴스 (전역)
-- `settingQuick` — 빠른 선택 버튼 클릭 시 `true`로 설정; flatpickr `onChange`가 `setDate()` 호출로 발화될 때 `clearQuickActive()`를 막는 플래그
-- `initDatePickers()` — flatpickr 초기화 (`init()`에서 호출)
+**날짜 관련 JS 변수/함수**
+- `startPicker` / `endPicker` / `modalDatePicker` — AirDatepicker 인스턴스 (전역)
+- `localeKo` — 한국어 locale 객체 (CDN 버그 우회용, `receipt.js` 내 정의)
+- `settingQuick` — 빠른 선택 버튼 클릭 시 `true`; `onSelect` 발화 시 `clearQuickActive()` 방지 플래그
+- `initDatePickers()` — AirDatepicker 초기화 (`init()`에서 호출)
 - `clearQuickActive()` — `.btn-quick--active` 클래스 전체 제거
-- `setQuickDate(start, end, activeBtn)` — 날짜 범위 설정 후 해당 버튼에 `--active` 클래스 추가
+- `setQuickDate(start, end, activeBtn)` — `selectDate()` / `update({minDate})` 로 날짜 범위 설정
 
 **빠른 선택 버튼 (`data-quick` 값)**
 - `this-month` — 이번달 1일 ~ 말일
 - `last-month` — 저번달 1일 ~ 말일
 - `last-3-months` — 3개월 전 1일 ~ 이번달 말일
 
-**DTO 구조 (백엔드 미구현)**
-- 등록 body: `{ name, receiptType("F"/"O"), amount, usedDate(yyyyMMdd), categoryId }`
-- 수정 body: `{ id, name, receiptType, amount, usedDate, categoryId }`
+**DTO 구조**
+- 등록 body: `{ name, receiptType("F"/"O"), paymentType("C"/"M"), installment("001"~"012"), amount, usedDate(yyyyMMdd), categoryId }`
+- 수정 body: `{ id, name, receiptType, paymentType, installment, amount, usedDate, categoryId }`
 - 목록 query: `startDate, endDate, categoryId, name, page, size`
 - 목록 응답: `{ code, message, data: { content:[...], totalPages, totalElements, currentPage, pageSize } }`
 - content 항목: `{ id, name, receiptType, receiptTypeLabel, amount, usedDate, categoryId, categoryName, parentCategoryName }`
 
-**receipt.js 주요 API 함수 (백엔드 연동 대기)**
-- `apiSearch()` — `GET /receipt/list`
-- `apiCreate(body)` — `POST /receipt`
-- `apiUpdate(id, body)` — `PUT /receipt`
-- `apiDelete(id, card)` — `DELETE /receipt/{id}`
+**receipt.js 주요 API 함수**
+- `apiSearch()` — `GET /receipt/list` (현재 더미 데이터, 백엔드 구현 시 fetch로 교체)
+- `apiCreate(body)` — `POST /receipt` **[연동 완료]**, 성공 시 토스트 → 모달 닫기 → `apiSearch()` 재호출
+- `apiUpdate(id, body)` — `PUT /receipt` **[백엔드 미구현, stub]**
+- `apiDelete(id, tr, confirmTr)` — `DELETE /receipt/{id}` **[백엔드 미구현, stub]**
 
 ## CSS Naming
 
