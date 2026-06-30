@@ -55,11 +55,15 @@ public class Receipt extends BaseEntity {
     private DataStatus dataStatus;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "category_id", comment = "카테고리 아이디")
+    @JoinColumn(name = "parent_category_id", comment = "대분류 카테고리 아이디", nullable = false)
+    private Category parentCategory;
+
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "category_id", comment = "소분류 카테고리 아이디")
     private Category category;
 
     @Builder
-    public Receipt(Integer id, String name, ReceiptType receiptType, PaymentType paymentType, Installment installment, Integer amount, String usedDate, DataStatus dataStatus, Category category) {
+    public Receipt(Integer id, String name, ReceiptType receiptType, PaymentType paymentType, Installment installment, Integer amount, String usedDate, DataStatus dataStatus, Category parentCategory, Category category) {
         this.id = id;
         this.name = name;
         this.receiptType = receiptType;
@@ -68,6 +72,7 @@ public class Receipt extends BaseEntity {
         this.amount = amount;
         this.usedDate = usedDate;
         this.dataStatus = dataStatus;
+        this.parentCategory = parentCategory;
         this.category = category;
     }
 }

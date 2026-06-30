@@ -53,4 +53,18 @@ public class ReceiptService {
 
         receiptRepository.save(receipt);
     }
+
+    /**
+     * 사용내역 조회
+     *
+     * @param startDate
+     * @param endDate
+     * @param categoryId
+     * @param name
+     * @param page
+     * @param size
+     */
+    public void findReceiptList(String startDate, String endDate, Integer categoryId, String name, Integer page, Integer size) {
+        
+    }
 }
