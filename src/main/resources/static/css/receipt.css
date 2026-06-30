@@ -124,135 +124,193 @@
 }
 
 /* =====================
-   Receipt Grid
+   Table Controls
    ===================== */
-.receipt-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
+.table-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
+.table-controls__size {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.table-controls__label {
+    font-size: 13px;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.table-controls__select {
+    padding: 6px 10px;
+    font-size: 13px;
+    width: auto;
+}
+
+/* =====================
+   Receipt Empty
+   ===================== */
 .receipt-empty {
     text-align: center;
     padding: 64px 0;
     color: #94a3b8;
     font-size: 14px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 }
 
 /* =====================
-   Receipt Card
+   Receipt Table
    ===================== */
-.receipt-card {
+.receipt-table-wrap {
     background-color: #ffffff;
     border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    transition: box-shadow 0.15s;
+    margin-bottom: 16px;
+    height: 600px;
+    overflow-y: auto;
 }
 
-.receipt-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.receipt-table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.receipt-card__top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.receipt-card__name {
-    font-size: 15px;
+.receipt-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
     font-weight: 600;
+    color: #64748b;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.receipt-table thead th.col-amount {
+    text-align: right;
+}
+
+.receipt-table tbody td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.receipt-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.receipt-table tbody tr:not(.receipt-row--confirm):hover td {
+    background-color: #f8fafc;
+}
+
+.receipt-table td.col-name {
+    font-weight: 500;
     color: #1e2a3b;
-    flex: 1;
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.receipt-card__badge {
-    flex-shrink: 0;
+.receipt-table td.col-amount {
+    text-align: right;
+    font-weight: 600;
+    color: #1e2a3b;
+    white-space: nowrap;
+}
+
+.receipt-table td.col-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.receipt-table td.col-actions .btn + .btn {
+    margin-left: 4px;
+}
+
+/* 삭제 확인 행 */
+.receipt-row--confirm td {
+    padding: 10px 16px;
+    background-color: #fff7f7;
+}
+
+.receipt-confirm__text {
+    font-size: 13px;
+    color: #f43f5e;
+    margin-right: 12px;
+}
+
+/* =====================
+   Receipt Badge
+   ===================== */
+.receipt-badge {
+    display: inline-block;
     padding: 2px 8px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 500;
 }
 
-.receipt-card__badge--once {
+.receipt-badge--once {
     background-color: #eff6ff;
     color: #3b82f6;
 }
 
-.receipt-card__badge--fix {
+.receipt-badge--fix {
     background-color: #fef3c7;
     color: #d97706;
 }
 
-.receipt-card__amount {
-    font-size: 20px;
-    font-weight: 700;
-    color: #1e2a3b;
-}
-
-.receipt-card__meta {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.receipt-card__meta-item {
+/* =====================
+   Receipt Summary
+   ===================== */
+.receipt-summary {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    padding: 14px 24px;
+    margin-bottom: 12px;
+}
+
+.receipt-summary__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.receipt-summary__sep {
+    width: 1px;
+    height: 14px;
+    background-color: #e2e8f0;
+    margin: 0 20px;
+}
+
+.receipt-summary__label {
+    font-size: 13px;
     color: #64748b;
 }
 
-.receipt-card__meta-label {
-    color: #94a3b8;
-    width: 44px;
-    flex-shrink: 0;
+.receipt-summary__value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
 }
 
-.receipt-card__divider {
-    height: 1px;
-    background-color: #f1f5f9;
-}
-
-.receipt-card__actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-}
-
-/* 삭제 확인 */
-.receipt-card__confirm {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background-color: #fff7f7;
-    border-radius: 6px;
-}
-
-.receipt-card--confirming .receipt-card__actions {
-    display: none;
-}
-
-.receipt-card--confirming .receipt-card__confirm {
-    display: flex;
-}
-
-.receipt-card__confirm-text {
-    flex: 1;
-    font-size: 12px;
-    color: #f43f5e;
+.receipt-summary__value--total {
+    font-size: 15px;
+    color: #4a6cf7;
 }
 
 /* =====================
@@ -473,21 +531,30 @@
 }
 
 /* =====================
-   Flatpickr Override
+   Air Datepicker Override
    ===================== */
-.flatpickr-day.selected,
-.flatpickr-day.selected:hover,
-.flatpickr-day.selected:focus {
-    background: #4a6cf7;
-    border-color: #4a6cf7;
+.air-datepicker-global-container {
+    z-index: 9999;
 }
 
-.flatpickr-day.today {
-    border-color: #4a6cf7;
-}
-
-.flatpickr-day.today:hover {
+.air-datepicker-cell.-selected-,
+.air-datepicker-cell.-selected-.-current- {
     background: #4a6cf7;
-    border-color: #4a6cf7;
     color: #ffffff;
+}
+
+.air-datepicker-cell.-selected-:hover {
+    background: #3b5de7;
+}
+
+.air-datepicker-cell.-current- {
+    color: #4a6cf7;
+}
+
+.air-datepicker-cell:hover {
+    background: #eff2ff;
+}
+
+.-only-timepicker- .air-datepicker--pointer:after {
+    border-bottom-color: #4a6cf7;
 }

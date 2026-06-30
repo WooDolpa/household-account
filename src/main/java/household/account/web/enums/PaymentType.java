@@ -7,19 +7,19 @@ import java.util.Arrays;
 
 @Getter
 @RequiredArgsConstructor
-public enum ReceiptType {
+public enum PaymentType {
 
-    FIX("F", "고정"),
-    ONCE("O", "일회성")
+    CARD("C", "카드"),
+    CASH("M", "현금")
     ;
 
     private final String key;
     private final String description;
 
-    public static ReceiptType findReceiptType(String key) {
-        return Arrays.stream(ReceiptType.values())
-                .filter(r -> r.key.equals(key))
+    public static PaymentType findPaymentType(String key) {
+        return Arrays.stream(PaymentType.values())
+                .filter(i -> i.key.equals(key))
                 .findAny()
-                .orElse(ONCE);
+                .orElse(CARD);
     }
 }

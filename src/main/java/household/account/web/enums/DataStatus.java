@@ -9,8 +9,8 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum DataStatus {
 
-    Yes("Y", "사용"),
-    No("N", "미사용"),
+    YES("Y", "사용"),
+    NO("N", "미사용"),
     ;
 
     private final String key;
@@ -20,6 +20,6 @@ public enum DataStatus {
         return Arrays.stream(DataStatus.values())
                 .filter(i -> i.key.equals(key))
                 .findAny()
-                .orElse(DataStatus.Yes);
+                .orElse(DataStatus.YES);
     }
 }

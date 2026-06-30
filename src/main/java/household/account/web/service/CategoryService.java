@@ -40,20 +40,20 @@ public class CategoryService {
         OrderType orderType = OrderType.findOrderType(dto.getOrderType());
         Integer orderNum = dto.getOrderNum();
 
-        if(OrderType.Manual.equals(orderType)) {
+        if(OrderType.MANUAL.equals(orderType)) {
             // 순번 정리
             List<Category> list = categoryRepository.findParentByOrderNumGoe(dto.getOrderNum())
                     .orElse(new ArrayList<>());
 
             list.forEach(Category::increaseOrderNum);
-        }else if(OrderType.Auto.equals(orderType)) {
+        }else if(OrderType.AUTO.equals(orderType)) {
             Long totalCount = categoryRepository.findParentCategoryCount();
             orderNum = (totalCount.intValue() + 1);
         }
 
         Category category = Category.builder()
                 .name(dto.getName())
-                .dataStatus(DataStatus.Yes)
+                .dataStatus(DataStatus.YES)
                 .orderNum(orderNum)
                 .build();
 
@@ -161,13 +161,13 @@ public class CategoryService {
         OrderType orderType = OrderType.findOrderType(dto.getOrderType());
         Integer orderNum = dto.getOrderNum();
 
-        if(OrderType.Manual.equals(orderType)) {
+        if(OrderType.MANUAL.equals(orderType)) {
             // 순번 정리
             List<Category> list = categoryRepository.findByNameAndParentIdOrderNumGoe(dto.getName(), dto.getParentId(), dto.getOrderNum())
                     .orElse(new ArrayList<>());
 
             list.forEach(Category::increaseOrderNum);
-        }else if(OrderType.Auto.equals(orderType)) {
+        }else if(OrderType.AUTO.equals(orderType)) {
             Long totalCount = categoryRepository.findByParentIdCount(dto.getParentId());
             orderNum = (totalCount.intValue() + 1);
         }
@@ -176,7 +176,7 @@ public class CategoryService {
                 .name(dto.getName())
                 .parentId(dto.getParentId())
                 .orderNum(orderNum)
-                .dataStatus(DataStatus.Yes)
+                .dataStatus(DataStatus.YES)
                 .build();
 
         categoryRepository.save(category);

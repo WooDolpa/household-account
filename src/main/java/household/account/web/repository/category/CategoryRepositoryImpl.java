@@ -25,7 +25,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchId(id),
-                        category.dataStatus.eq(DataStatus.Yes)
+                        category.dataStatus.eq(DataStatus.YES)
                 )
                 .fetchOne();
 
@@ -53,7 +53,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         category.parentId.isNull(),
-                        category.dataStatus.ne(DataStatus.No),
+                        category.dataStatus.ne(DataStatus.NO),
                         matchOrderNumGoe(orderNum)
                 )
                 .orderBy(category.orderNum.asc())
@@ -69,7 +69,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         category.parentId.isNull(),
-                        category.dataStatus.ne(DataStatus.No)
+                        category.dataStatus.ne(DataStatus.NO)
                 )
                 .fetchOne();
 
@@ -82,7 +82,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
         List<Category> list = factory.select(category)
                 .from(category)
                 .where(
-                        category.dataStatus.ne(DataStatus.No),
+                        category.dataStatus.ne(DataStatus.NO),
                         category.parentId.isNull(),
                         matchOrderNumGoe(newOrderNum),
                         matchOrderNumLt(originalOrderNum)
@@ -98,7 +98,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
         List<Category> list = factory.select(category)
                 .from(category)
                 .where(
-                        category.dataStatus.ne(DataStatus.No),
+                        category.dataStatus.ne(DataStatus.NO),
                         category.parentId.isNull(),
                         matchOrderNumGt(originalOrderNum),
                         matchOrderNumLoe(newOrderNum)
@@ -114,7 +114,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
         List<Category> list = factory.select(category)
                 .from(category)
                 .where(
-                        category.dataStatus.ne(DataStatus.No),
+                        category.dataStatus.ne(DataStatus.NO),
                         category.parentId.isNull(),
                         matchOrderNumGt(orderNum)
                 )
@@ -130,7 +130,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         category.parentId.isNull(),
-                        category.dataStatus.ne(DataStatus.No)
+                        category.dataStatus.ne(DataStatus.NO)
                 )
                 .orderBy(category.orderNum.asc())
                 .fetch();
@@ -145,7 +145,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
-                        category.dataStatus.ne(DataStatus.No),
+                        category.dataStatus.ne(DataStatus.NO),
                         matchName(name)
                 )
                 .fetchOne();
@@ -160,7 +160,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
-                        category.dataStatus.ne(DataStatus.No),
+                        category.dataStatus.ne(DataStatus.NO),
                         matchName(name)
                 )
                 .orderBy(category.orderNum.asc())
@@ -176,7 +176,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
-                        category.dataStatus.ne(DataStatus.No)
+                        category.dataStatus.ne(DataStatus.NO)
                 )
                 .fetchOne();
 
@@ -190,7 +190,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
-                        category.dataStatus.ne(DataStatus.No)
+                        category.dataStatus.ne(DataStatus.NO)
                 )
                 .orderBy(category.orderNum.asc())
                 .fetch();
@@ -205,7 +205,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
-                        category.dataStatus.ne(DataStatus.No)
+                        category.dataStatus.ne(DataStatus.NO)
                 )
                 .fetch();
 
@@ -219,7 +219,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
-                        category.dataStatus.ne(DataStatus.No),
+                        category.dataStatus.ne(DataStatus.NO),
                         matchOrderNumGoe(newOrderNum),
                         matchOrderNumLt(originalOrderNum)
                 )
@@ -235,7 +235,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
-                        category.dataStatus.ne(DataStatus.No),
+                        category.dataStatus.ne(DataStatus.NO),
                         matchOrderNumGt(originalOrderNum),
                         matchOrderNumLoe(newOrderNum)
                 )
@@ -251,7 +251,7 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
                 .from(category)
                 .where(
                         matchParentId(parentId),
-                        category.dataStatus.ne(DataStatus.No),
+                        category.dataStatus.ne(DataStatus.NO),
                         matchOrderNumGt(orderNum)
                 )
                 .fetch();

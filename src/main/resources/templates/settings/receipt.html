@@ -8,7 +8,7 @@
     <link rel="stylesheet" th:href="@{/css/sidebar.css}">
     <link rel="stylesheet" th:href="@{/css/receipt.css}">
     <link rel="stylesheet" th:href="@{/css/toast.css}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/air-datepicker@3.6.0/air-datepicker.css">
 </head>
 <body>
 
@@ -51,6 +51,7 @@
                     <div class="filter-select-wrap">
                         <select class="form-select" id="filterParentCategory">
                             <option value="">대분류 전체</option>
+                            <option th:each="p : ${parentCategoryList}" th:value="${p.id}" th:text="${p.name}"></option>
                         </select>
                         <select class="form-select" id="filterChildCategory">
                             <option value="">소분류 전체</option>
@@ -68,8 +69,38 @@
             </div>
         </div>
 
-        <!-- 카드 목록 -->
-        <div class="receipt-grid" id="receiptGrid"></div>
+        <!-- 총계 -->
+        <div class="receipt-summary hidden" id="receiptSummary"></div>
+
+        <!-- 테이블 컨트롤 -->
+        <div class="table-controls">
+            <div class="table-controls__size">
+                <label class="table-controls__label" for="pageSizeSelect">페이지당 표시</label>
+                <select class="form-select table-controls__select" id="pageSizeSelect">
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                    <option value="300">300</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 테이블 목록 -->
+        <div class="receipt-table-wrap" id="receiptTableWrap">
+            <table class="receipt-table">
+                <thead>
+                    <tr>
+                        <th>사용일</th>
+                        <th>사용명</th>
+                        <th>카테고리</th>
+                        <th>사용구분</th>
+                        <th class="col-amount">금액</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody id="receiptTbody"></tbody>
+            </table>
+        </div>
         <div class="receipt-empty hidden" id="receiptEmpty">조회된 사용내역이 없습니다</div>
 
         <!-- 페이지네이션 -->
@@ -88,13 +119,13 @@
 
                 <div class="form-group">
                     <label class="form-label" for="modalAmount">금액</label>
-                    <input type="number" class="form-input" id="modalAmount" placeholder="금액을 입력하세요" min="0">
+                    <input type="text" class="form-input" id="modalAmount" placeholder="금액을 입력하세요" inputmode="numeric">
                     <span class="form-error hidden" id="modalAmountError">금액을 입력해 주세요</span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="modalUsedDate">사용일</label>
-                    <input type="date" class="form-input" id="modalUsedDate">
+                    <input type="text" class="form-input" id="modalUsedDate" placeholder="날짜를 선택하세요" readonly>
                     <span class="form-error hidden" id="modalUsedDateError">사용일을 선택해 주세요</span>
                 </div>
 
@@ -102,6 +133,7 @@
                     <label class="form-label" for="modalParentCategory">대분류</label>
                     <select class="form-select" id="modalParentCategory">
                         <option value="">대분류를 선택하세요</option>
+                        <option th:each="p : ${parentCategoryList}" th:value="${p.id}" th:text="${p.name}"></option>
                     </select>
                     <span class="form-error hidden" id="modalParentError">대분류를 선택해 주세요</span>
                 </div>
@@ -128,6 +160,38 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">결제수단</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="modalPaymentType" value="C" checked>
+                            <span>카드</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="modalPaymentType" value="M">
+                            <span>현금</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="modalInstallmentGroup">
+                    <label class="form-label" for="modalInstallment">할부</label>
+                    <select class="form-select" id="modalInstallment">
+                        <option value="001">일시불</option>
+                        <option value="002">2개월 할부</option>
+                        <option value="003">3개월 할부</option>
+                        <option value="004">4개월 할부</option>
+                        <option value="005">5개월 할부</option>
+                        <option value="006">6개월 할부</option>
+                        <option value="007">7개월 할부</option>
+                        <option value="008">8개월 할부</option>
+                        <option value="009">9개월 할부</option>
+                        <option value="010">10개월 할부</option>
+                        <option value="011">11개월 할부</option>
+                        <option value="012">12개월 할부</option>
+                    </select>
+                </div>
+
                 <div class="modal__footer">
                     <button type="button" class="btn btn--secondary" id="modalCancelBtn">취소</button>
                     <button type="button" class="btn btn--primary" id="modalSaveBtn">저장</button>
@@ -138,8 +202,7 @@
     </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.6.0/air-datepicker.js"></script>
 <script th:src="@{/js/sidebar.js}"></script>
 <script th:src="@{/js/toast.js}"></script>
 <script th:src="@{/js/receipt.js}"></script>

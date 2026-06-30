@@ -1,10 +1,14 @@
 package household.account.web.domain.receipt;
 
 import household.account.web.converter.DataStatusConverter;
+import household.account.web.converter.InstallmentConverter;
+import household.account.web.converter.PaymentTypeConverter;
 import household.account.web.converter.ReceiptTypeConverter;
 import household.account.web.domain.BaseEntity;
 import household.account.web.domain.category.Category;
 import household.account.web.enums.DataStatus;
+import household.account.web.enums.Installment;
+import household.account.web.enums.PaymentType;
 import household.account.web.enums.ReceiptType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -32,6 +36,14 @@ public class Receipt extends BaseEntity {
     @Column(name = "receipt_type", comment = "사용구분( F :  고정, O : 일회성)")
     private ReceiptType receiptType;
 
+    @Convert(converter = PaymentTypeConverter.class)
+    @Column(name = "payment_type", comment = "결제타입(C : 카드, M : 현금)")
+    private PaymentType paymentType;
+
+    @Convert(converter = InstallmentConverter.class)
+    @Column(name = "installment", comment = "할부(001 : 일시불, 002 : 2개월 할부...)")
+    private Installment installment;
+
     @Column(name = "amount", comment = "금액")
     private Integer amount;
 
@@ -47,10 +59,12 @@ public class Receipt extends BaseEntity {
     private Category category;
 
     @Builder
-    public Receipt(Integer id, String name, ReceiptType receiptType, Integer amount, String usedDate, DataStatus dataStatus, Category category) {
+    public Receipt(Integer id, String name, ReceiptType receiptType, PaymentType paymentType, Installment installment, Integer amount, String usedDate, DataStatus dataStatus, Category category) {
         this.id = id;
         this.name = name;
         this.receiptType = receiptType;
+        this.paymentType = paymentType;
+        this.installment = installment;
         this.amount = amount;
         this.usedDate = usedDate;
         this.dataStatus = dataStatus;

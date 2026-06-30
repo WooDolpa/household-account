@@ -9,8 +9,8 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum OrderType {
 
-    Auto("auto", "자동부여"),
-    Manual("manual", "직접입력")
+    AUTO("auto", "자동부여"),
+    MANUAL("manual", "직접입력")
     ;
 
     private final String key;
