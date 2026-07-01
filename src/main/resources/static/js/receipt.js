@@ -29,46 +29,47 @@
     var modalInstallmentEl    = document.getElementById('modalInstallment');
     var filterParentEl        = document.getElementById('filterParentCategory');
     var filterChildEl         = document.getElementById('filterChildCategory');
+    var bulkAddBtn            = document.getElementById('bulkAddBtn');
+    var bulkModalOverlay      = document.getElementById('bulkModalOverlay');
+    var bulkTbody             = document.getElementById('bulkTbody');
+    var bulkAddRowBtn         = document.getElementById('bulkAddRowBtn');
+    var bulkCancelBtn         = document.getElementById('bulkCancelBtn');
+    var bulkSaveBtn           = document.getElementById('bulkSaveBtn');
+    var bulkSummary           = document.getElementById('bulkSummary');
 
-    /* ─── 더미 데이터 (API 연동 전 임시) ────────────────── */
+    /* ─── 카테고리 이름 캐시 (목록 렌더링용) ────────────── */
 
-    var DUMMY_ALL = (function () {
-        var templates = [
-            { name: '스타벅스 아메리카노', receiptType: 'O', receiptTypeLabel: '일회성', amount: 5500,   categoryId: 2, categoryName: '카페',   parentCategoryName: '식비' },
-            { name: '월세',               receiptType: 'F', receiptTypeLabel: '고정',   amount: 550000, categoryId: 5, categoryName: '주거비', parentCategoryName: '주거' },
-            { name: '점심 식사',           receiptType: 'O', receiptTypeLabel: '일회성', amount: 12000,  categoryId: 3, categoryName: '식사',   parentCategoryName: '식비' },
-            { name: '넷플릭스',            receiptType: 'F', receiptTypeLabel: '고정',   amount: 17000,  categoryId: 8, categoryName: '구독',   parentCategoryName: '여가' },
-            { name: '편의점',              receiptType: 'O', receiptTypeLabel: '일회성', amount: 3200,   categoryId: 3, categoryName: '식사',   parentCategoryName: '식비' },
-            { name: '버스비',              receiptType: 'O', receiptTypeLabel: '일회성', amount: 1500,   categoryId: 7, categoryName: '교통',   parentCategoryName: '교통' },
-            { name: '헬스장',              receiptType: 'F', receiptTypeLabel: '고정',   amount: 70000,  categoryId: 9, categoryName: '운동',   parentCategoryName: '여가' },
-            { name: '마트',                receiptType: 'O', receiptTypeLabel: '일회성', amount: 45000,  categoryId: 4, categoryName: '식료품', parentCategoryName: '식비' },
-            { name: '통신비',              receiptType: 'F', receiptTypeLabel: '고정',   amount: 55000,  categoryId: 6, categoryName: '통신',   parentCategoryName: '생활' },
-            { name: '영화',                receiptType: 'O', receiptTypeLabel: '일회성', amount: 14000,  categoryId: 8, categoryName: '구독',   parentCategoryName: '여가' },
-        ];
-        var result = [];
-        for (var i = 0; i < 55; i++) {
-            var t   = templates[i % templates.length];
-            var day = ((i * 7) % 28) + 1;
-            result.push({
-                id:               i + 1,
-                name:             t.name + (i >= templates.length ? ' ' + (Math.floor(i / templates.length) + 1) : ''),
-                receiptType:      t.receiptType,
-                receiptTypeLabel: t.receiptTypeLabel,
-                amount:           t.amount,
-                usedDate:         '202606' + (day < 10 ? '0' + day : '' + day),
-                categoryId:       t.categoryId,
-                categoryName:     t.categoryName,
-                parentCategoryName: t.parentCategoryName
-            });
-        }
-        return result;
-    })();
+    var RECEIPT_TYPE_LABEL = { F: '고정', O: '일회성' };
+    var categoryNameMap = {}; // categoryId(소분류) -> { name, parentName }
+    var parentNameMap   = {}; // parentCategoryId(대분류) -> name
+
+    function buildCategoryNameMap() {
+        var parentOptions = Array.prototype.slice.call(filterParentEl.options)
+            .filter(function (o) { return o.value; });
+
+        parentOptions.forEach(function (opt) {
+            parentNameMap[opt.value] = opt.textContent;
+        });
+
+        var promises = parentOptions.map(function (opt) {
+            return fetch('/category/list?parentId=' + opt.value)
+                .then(function (r) { return r.json(); })
+                .then(function (r) {
+                    (r.data || []).forEach(function (c) {
+                        categoryNameMap[c.id] = { name: c.name, parentName: opt.textContent };
+                    });
+                })
+                .catch(function () {});
+        });
+
+        return Promise.all(promises);
+    }
 
     /* ─── 초기화 ─────────────────────────────────────────── */
 
     function init() {
         initDatePickers();
-        apiSearch();
+        buildCategoryNameMap().then(apiSearch);
     }
 
     /* ─── Flatpickr 초기화 ───────────────────────────────── */
@@ -183,13 +184,17 @@
         var tr = document.createElement('tr');
         tr.dataset.id = item.id;
 
-        var badgeClass = item.receiptType === 'F' ? 'receipt-badge--fix' : 'receipt-badge--once';
+        var badgeClass        = item.receiptType === 'F' ? 'receipt-badge--fix' : 'receipt-badge--once';
+        var receiptTypeLabel  = RECEIPT_TYPE_LABEL[item.receiptType] || item.receiptType;
+        var parentName        = parentNameMap[item.parentCategoryId] || '';
+        var categoryInfo      = item.categoryId ? categoryNameMap[item.categoryId] : null;
+        var categoryCell      = categoryInfo ? esc(parentName) + ' &gt; ' + esc(categoryInfo.name) : esc(parentName);
 
         tr.innerHTML =
             '<td>' + formatDate(item.usedDate) + '</td>' +
             '<td class="col-name">' + esc(item.name) + '</td>' +
-            '<td>' + esc(item.parentCategoryName) + ' &gt; ' + esc(item.categoryName) + '</td>' +
-            '<td><span class="receipt-badge ' + badgeClass + '">' + esc(item.receiptTypeLabel) + '</span></td>' +
+            '<td>' + categoryCell + '</td>' +
+            '<td><span class="receipt-badge ' + badgeClass + '">' + esc(receiptTypeLabel) + '</span></td>' +
             '<td class="col-amount">' + Number(item.amount).toLocaleString() + '원</td>' +
             '<td class="col-actions">' +
                 '<button class="btn btn--secondary btn--sm edit-btn">수정</button>' +
@@ -347,7 +352,8 @@
         clearModalErrors();
 
         resetModalCategories();
-        setModalParent(item);
+        modalParentEl.value = item.parentCategoryId;
+        loadChildCategories(item.parentCategoryId, modalChildEl, '소분류를 선택하세요', item.categoryId);
 
         modalOverlay.classList.remove('hidden');
     }
@@ -356,24 +362,6 @@
         modalParentEl.value = '';
         modalChildEl.innerHTML = '<option value="">소분류를 선택하세요</option>';
         modalChildEl.disabled = true;
-    }
-
-    function setModalParent(item) {
-        Array.prototype.slice.call(modalParentEl.options)
-            .filter(function (o) { return o.value; })
-            .forEach(function (opt) {
-                fetch('/category/list?parentId=' + opt.value)
-                .then(function (r) { return r.json(); })
-                .then(function (r) {
-                    var children = r.data || [];
-                    var match = children.find(function (c) { return c.id === item.categoryId; });
-                    if (match) {
-                        modalParentEl.value = opt.value;
-                        loadChildCategories(opt.value, modalChildEl, '소분류를 선택하세요', item.categoryId);
-                    }
-                })
-                .catch(function () {});
-            });
     }
 
     function closeModal() {
@@ -385,6 +373,167 @@
     function clearModalErrors() {
         ['modalNameError', 'modalAmountError', 'modalUsedDateError', 'modalParentError', 'modalChildError'].forEach(function (id) {
             document.getElementById(id).classList.add('hidden');
+        });
+    }
+
+    /* ─── 일괄 등록 ──────────────────────────────────────── */
+
+    var INSTALLMENT_OPTIONS_HTML =
+        '<option value="001">일시불</option>' +
+        '<option value="002">2개월 할부</option>' +
+        '<option value="003">3개월 할부</option>' +
+        '<option value="004">4개월 할부</option>' +
+        '<option value="005">5개월 할부</option>' +
+        '<option value="006">6개월 할부</option>' +
+        '<option value="007">7개월 할부</option>' +
+        '<option value="008">8개월 할부</option>' +
+        '<option value="009">9개월 할부</option>' +
+        '<option value="010">10개월 할부</option>' +
+        '<option value="011">11개월 할부</option>' +
+        '<option value="012">12개월 할부</option>';
+
+    function openBulkModal() {
+        bulkTbody.innerHTML = '';
+        addBulkRow();
+        bulkModalOverlay.classList.remove('hidden');
+    }
+
+    function closeBulkModal() {
+        bulkModalOverlay.classList.add('hidden');
+    }
+
+    function addBulkRow() {
+        var tr = document.createElement('tr');
+        tr.className = 'bulk-row';
+        tr.innerHTML =
+            '<td><input type="date" class="form-input bulk-date"></td>' +
+            '<td><input type="text" class="form-input bulk-name" maxlength="32" placeholder="사용명"></td>' +
+            '<td><input type="text" class="form-input bulk-amount" inputmode="numeric" placeholder="금액"></td>' +
+            '<td>' +
+                '<select class="form-select bulk-receipt-type">' +
+                    '<option value="O">일회성</option>' +
+                    '<option value="F">고정</option>' +
+                '</select>' +
+            '</td>' +
+            '<td><select class="form-select bulk-parent">' + modalParentEl.innerHTML + '</select></td>' +
+            '<td><select class="form-select bulk-child" disabled><option value="">소분류</option></select></td>' +
+            '<td>' +
+                '<select class="form-select bulk-payment">' +
+                    '<option value="C">카드</option>' +
+                    '<option value="M">현금</option>' +
+                '</select>' +
+            '</td>' +
+            '<td><select class="form-select bulk-installment">' + INSTALLMENT_OPTIONS_HTML + '</select></td>' +
+            '<td class="col-actions"><button type="button" class="btn btn--secondary btn--sm bulk-remove-btn">삭제</button></td>';
+
+        tr.querySelector('.bulk-remove-btn').addEventListener('click', function () {
+            removeBulkRow(tr);
+        });
+        tr.querySelector('.bulk-parent').addEventListener('change', function () {
+            loadChildCategories(this.value, tr.querySelector('.bulk-child'), '소분류', null);
+        });
+        tr.querySelector('.bulk-payment').addEventListener('change', function () {
+            var installmentSelect = tr.querySelector('.bulk-installment');
+            if (this.value === 'M') {
+                installmentSelect.value = '001';
+                installmentSelect.disabled = true;
+            } else {
+                installmentSelect.disabled = false;
+            }
+        });
+        tr.querySelector('.bulk-amount').addEventListener('input', function () {
+            var digits = this.value.replace(/[^0-9]/g, '');
+            this.value = digits ? Number(digits).toLocaleString() : '';
+            updateBulkSummary();
+        });
+
+        bulkTbody.appendChild(tr);
+        updateBulkSummary();
+    }
+
+    function removeBulkRow(tr) {
+        if (bulkTbody.querySelectorAll('.bulk-row').length <= 1) return;
+        tr.remove();
+        updateBulkSummary();
+    }
+
+    function updateBulkSummary() {
+        var rows  = Array.prototype.slice.call(bulkTbody.querySelectorAll('.bulk-row'));
+        var total = rows.reduce(function (sum, row) {
+            var amount = row.querySelector('.bulk-amount').value.replace(/,/g, '');
+            return sum + (Number(amount) || 0);
+        }, 0);
+        bulkSummary.textContent = '총 ' + rows.length + '건 · ' + total.toLocaleString() + '원';
+
+        var disableRemove = rows.length <= 1;
+        rows.forEach(function (row) {
+            row.querySelector('.bulk-remove-btn').disabled = disableRemove;
+        });
+    }
+
+    function readBulkRow(tr) {
+        var name        = tr.querySelector('.bulk-name').value.trim();
+        var amount      = tr.querySelector('.bulk-amount').value.replace(/,/g, '').trim();
+        var dateVal     = tr.querySelector('.bulk-date').value; // yyyy-MM-dd
+        var usedDate    = dateVal ? dateVal.replace(/-/g, '') : '';
+        var receiptType = tr.querySelector('.bulk-receipt-type').value;
+        var parentId    = tr.querySelector('.bulk-parent').value;
+        var childId     = tr.querySelector('.bulk-child').value;
+        var paymentType = tr.querySelector('.bulk-payment').value;
+        var installment = paymentType === 'C' ? tr.querySelector('.bulk-installment').value : '001';
+
+        var valid = !!(name && amount && usedDate && parentId);
+        tr.classList.toggle('bulk-row--invalid', !valid);
+        if (!valid) return null;
+
+        return {
+            name:             name,
+            receiptType:      receiptType,
+            paymentType:      paymentType,
+            installment:      installment,
+            amount:           Number(amount),
+            usedDate:         usedDate,
+            parentCategoryId: Number(parentId),
+            categoryId:       childId ? Number(childId) : null
+        };
+    }
+
+    function handleBulkSave() {
+        var rows   = Array.prototype.slice.call(bulkTbody.querySelectorAll('.bulk-row'));
+        var bodies = rows.map(readBulkRow);
+
+        if (bodies.some(function (b) { return b === null; })) {
+            showToast('입력값을 확인해 주세요.', 'error');
+            return;
+        }
+
+        bulkSaveBtn.disabled = true;
+        var successCount = 0;
+        var failCount    = 0;
+
+        bodies.reduce(function (chain, body) {
+            return chain.then(function () {
+                return fetch('/receipt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (res) {
+                    if (res.code === '200') successCount++; else failCount++;
+                })
+                .catch(function () { failCount++; });
+            });
+        }, Promise.resolve())
+        .then(function () {
+            bulkSaveBtn.disabled = false;
+            if (failCount === 0) {
+                showToast(successCount + '건 등록되었습니다.', 'success');
+                closeBulkModal();
+            } else {
+                showToast(successCount + '건 성공, ' + failCount + '건 실패했습니다.', 'error');
+            }
+            apiSearch();
         });
     }
 
@@ -405,19 +554,19 @@
         document.getElementById('modalAmountError').classList.toggle('hidden', !!amount);
         document.getElementById('modalUsedDateError').classList.toggle('hidden', !!usedDate);
         document.getElementById('modalParentError').classList.toggle('hidden', !!parentId);
-        document.getElementById('modalChildError').classList.toggle('hidden', !!childId);
 
-        if (!name || !amount || !usedDate || !parentId || !childId) valid = false;
+        if (!name || !amount || !usedDate || !parentId) valid = false;
         if (!valid) return;
 
         var body = {
-            name:        name,
-            receiptType: type,
-            paymentType: paymentType,
-            installment: installment,
-            amount:      Number(amount),
-            usedDate:    usedDate,
-            categoryId:  Number(childId)
+            name:             name,
+            receiptType:      type,
+            paymentType:      paymentType,
+            installment:      installment,
+            amount:           Number(amount),
+            usedDate:         usedDate,
+            parentCategoryId: Number(parentId),
+            categoryId:       childId ? Number(childId) : null
         };
 
         if (modalMode === 'add') {
@@ -430,32 +579,38 @@
     /* ─── API ────────────────────────────────────────────── */
 
     function apiSearch() {
-        // TODO: 백엔드 연동 시 아래 더미 로직을 fetch('GET /receipt/list') 로 교체
-        var name      = document.getElementById('filterName').value.trim().toLowerCase();
-        var childId   = filterChildEl.value;
-        var startDate = startPicker.selectedDates.length > 0 ? startPicker.selectedDates[0] : null;
-        var endDate   = endPicker.selectedDates.length   > 0 ? endPicker.selectedDates[0]   : null;
-        var startStr  = startDate ? dateToYMD(startDate) : null;
-        var endStr    = endDate   ? dateToYMD(endDate)   : null;
+        var name       = document.getElementById('filterName').value.trim();
+        var parentId   = filterParentEl.value;
+        var childId    = filterChildEl.value;
+        var startDate  = startPicker.selectedDates.length > 0 ? dateToYMD(startPicker.selectedDates[0]) : '';
+        var endDate    = endPicker.selectedDates.length   > 0 ? dateToYMD(endPicker.selectedDates[0])   : '';
 
-        var filtered = DUMMY_ALL.filter(function (item) {
-            if (name    && item.name.toLowerCase().indexOf(name) === -1) return false;
-            if (childId && String(item.categoryId) !== childId)          return false;
-            if (startStr && item.usedDate < startStr)                    return false;
-            if (endStr   && item.usedDate > endStr)                      return false;
-            return true;
-        });
+        var params = new URLSearchParams();
+        if (startDate) params.set('startDate', startDate);
+        if (endDate)   params.set('endDate', endDate);
+        if (parentId)  params.set('parentCategoryId', parentId);
+        if (childId)   params.set('categoryId', childId);
+        if (name)      params.set('name', name);
+        params.set('page', currentPage);
+        params.set('size', pageSize);
 
-        var total          = filtered.length;
-        var totalPagesCalc = Math.max(1, Math.ceil(total / pageSize));
-        if (currentPage >= totalPagesCalc) currentPage = 0;
-
-        renderPage({
-            content:       filtered.slice(currentPage * pageSize, (currentPage + 1) * pageSize),
-            totalPages:    totalPagesCalc,
-            totalElements: total,
-            currentPage:   currentPage,
-            pageSize:      pageSize
+        fetch('/receipt/list?' + params.toString())
+        .then(function (res) { return res.json(); })
+        .then(function (res) {
+            if (res.code !== '200') {
+                showToast(res.message || '조회에 실패했습니다.', 'error');
+                return;
+            }
+            renderPage({
+                content:       res.data || [],
+                totalPages:    res.totalPages    || 0,
+                totalElements: res.totalElements || 0,
+                currentPage:   res.currentPage != null ? res.currentPage : currentPage,
+                pageSize:      res.pageSize || pageSize
+            });
+        })
+        .catch(function () {
+            showToast('조회에 실패했습니다.', 'error');
         });
     }
 
@@ -529,8 +684,15 @@
     document.getElementById('modalSaveBtn').addEventListener('click', handleSave);
 
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeModal();
+        if (e.key !== 'Escape') return;
+        if (!bulkModalOverlay.classList.contains('hidden')) closeBulkModal();
+        else closeModal();
     });
+
+    bulkAddBtn.addEventListener('click', openBulkModal);
+    bulkAddRowBtn.addEventListener('click', addBulkRow);
+    bulkCancelBtn.addEventListener('click', closeBulkModal);
+    bulkSaveBtn.addEventListener('click', handleBulkSave);
 
     document.getElementById('searchBtn').addEventListener('click', function () {
         currentPage = 0;

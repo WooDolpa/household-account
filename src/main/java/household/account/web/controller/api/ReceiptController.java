@@ -29,16 +29,32 @@ public class ReceiptController {
         return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
     }
 
+    /**
+     * 사용내역 조회
+     *
+     * @param startDate
+     * @param endDate
+     * @param parentCategoryId
+     * @param categoryId
+     * @param name
+     * @param page
+     * @param size
+     * @return
+     */
     @GetMapping(path = "/list")
     public ResponseEntity<String> findReceiptList(@RequestParam(required = false) String startDate,
                                                   @RequestParam(required = false) String endDate,
+                                                  @RequestParam(required = false) Integer parentCategoryId,
                                                   @RequestParam(required = false) Integer categoryId,
                                                   @RequestParam(required = false) String name,
                                                   @RequestParam(defaultValue = "0") Integer page,
                                                   @RequestParam(defaultValue = "50") Integer size) {
 
-        receiptService.findReceiptList(startDate, endDate, categoryId, name, page, size);
-
-        return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
+        ReceiptDto.ListDto listDto = receiptService.findReceiptList(startDate, endDate, parentCategoryId, categoryId, name, page, size);
+        return new ResponseEntity<>(ApiResponseDto.makeResponse(listDto.getData(),
+                listDto.getTotalPages(),
+                listDto.getTotalElements(),
+                listDto.getCurrentPage(),
+                listDto.getPageSize()), HttpStatus.OK);
     }
 }

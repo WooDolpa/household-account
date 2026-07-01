@@ -50,7 +50,7 @@ Shared UI components live in `src/main/resources/templates/fragments/`. Include 
 `#request`, `#session`, `#servletContext`, `#response` 표현식 유틸 객체는 보안상 기본 비활성화됨. 템플릿에서 사용 시 `IllegalArgumentException` 런타임 에러 발생. 대신 JS에서 `window.location.pathname` 등으로 처리할 것.
 
 **Error Handling**
-Services throw `CustomException(ExceptionCode)`. `CustomExceptionHandler` (`@ControllerAdvice`) catches these and returns `ResponseEntity<String>` with `ApiResponseDto.makeResponse(e)` at the exception's `HttpStatus`. All API responses — success and error — use `{ code, message }` JSON shape (no `data` field unless explicitly added via `makeResponse(Object data)`).
+Services throw `CustomException(ExceptionCode)`. `CustomExceptionHandler` (`@ControllerAdvice`) catches these and returns `ResponseEntity<String>` with `ApiResponseDto.makeResponse(e)` at the exception's `HttpStatus`. All API responses — success and error — use `{ code, message }` JSON shape (no `data` field unless explicitly added via `makeResponse(Object data)`, or paginated fields via `makeResponse(Object data, Integer totalPages, Integer totalElements, Integer currentPage, Integer pageSize)`).
 
 **Enums**
 - `DataStatus` — `Yes("Y")` / `No("N")`. Persisted as `"Y"`/`"N"` via `DataStatusConverter`. Default on new records is `DataStatus.Yes`.
@@ -93,8 +93,8 @@ Static assets: `src/main/resources/static/css/` and `src/main/resources/static/j
 - `DELETE /category/{id}` — 소분류 삭제 (순번 재정렬)
 
 **REST API — 사용내역 (`ReceiptController`):**
-- `GET /receipt/list` — 목록 조회 (query: startDate, endDate, categoryId, name, page, size / 응답: `{ code, message, data: { content:[...], totalPages, totalElements, currentPage, pageSize } }`) **[백엔드 미구현 — 프론트 더미 데이터]**
-- `POST /receipt` — 등록 **[구현 완료]** (body: `{ name, receiptType("F"/"O"), paymentType("C"/"M"), installment("001"~"012"), amount, usedDate(yyyyMMdd), categoryId }`)
+- `GET /receipt/list` — 목록 조회 (query: startDate, endDate, parentCategoryId, categoryId, name, page, size) **[구현 완료, 프론트 연동 완료]** QueryDSL + Spring Data `Page`/`Pageable`(`PageableExecutionUtils`) 사용. `parentCategoryId`/`categoryId` 각각 독립적인 필터로 `where`에 적용됨(`matchParentCategoryIdEq`/`matchCategoryIdEq`). ⚠️ `name` 검색이 여전히 `eq`(완전일치)라 부분검색 안 됨
+- `POST /receipt` — 등록 **[구현 완료]** (body: `{ name, receiptType("F"/"O"), paymentType("C"/"M"), installment("001"~"012"), amount, usedDate(yyyyMMdd), parentCategoryId, categoryId }`) — `parentCategoryId`는 필수, `categoryId`(소분류)는 선택값(null 허용). `parentCategoryId` 미존재 시 `PARENT_CATEGORY_NOT_FOUND` 예외
 - `PUT /receipt` — 수정 (body: `{ id, name, receiptType, paymentType, installment, amount, usedDate, categoryId }`) **[백엔드 미구현]**
 - `DELETE /receipt/{id}` — 삭제 **[백엔드 미구현]**
 
@@ -215,10 +215,15 @@ showToast('메시지', 'success'); // 또는 'error'
 - `amount` — 금액 (Integer)
 - `usedDate` — 사용일 (yyyyMMdd 형식 String)
 - `dataStatus` — soft delete 상태
-- `category` — 소분류 Category (ManyToOne LAZY)
+- `parentCategory` — 대분류 Category (ManyToOne LAZY, `parent_category_id` 컬럼, `nullable = false`, 필수)
+- `category` — 소분류 Category (ManyToOne LAZY, `category_id` 컬럼, nullable 허용 — 선택값)
 
 **주요 동작 방식**
-- 목록은 JS에서 API 호출로 렌더링 (현재 더미 데이터로 UI 선구현, `GET /receipt/list` 백엔드 미구현)
+- 목록은 JS에서 `GET /receipt/list` 실제 호출로 렌더링 (더미 데이터 제거 완료)
+- 응답에 `categoryName`/`parentCategoryName`이 없으므로(id만 내려옴) `receipt.js`가 `buildCategoryNameMap()`으로 대분류별 `/category/list?parentId=` 응답을 순회해 `categoryId(소분류) -> {name, parentName}` 캐시(`categoryNameMap`)와 `parentCategoryId -> name` 캐시(`parentNameMap`)를 `init()` 시점에 만들어두고 테이블 렌더링(`makeRow`)에 사용. `receiptTypeLabel`도 응답에 없어 `RECEIPT_TYPE_LABEL` 맵으로 클라이언트에서 변환
+- 소분류(`categoryId`)는 선택값이라 `null`일 수 있음 — `makeRow`는 이 경우 `parentNameMap`으로 대분류명만 표시하고 `categoryNameMap` 조회를 건너뜀
+- `openEditModal`은 응답의 `parentCategoryId`를 그대로 써서 대분류 select를 채움 (예전처럼 모든 대분류를 순회하며 역추적하던 `setModalParent`는 제거됨)
+- 등록 모달에서 소분류는 선택값 — 미선택 시 `categoryId: null`로 전송, 검증도 하지 않음(대분류만 필수)
 - 테이블 레이아웃, 고정 높이 600px + 세로 스크롤, thead sticky
 - 레이아웃 순서: 필터 패널 → 총계(`receiptSummary`) → 테이블 컨트롤 → 테이블 → 페이지네이션
 - 필터 패널: 2행 레이아웃 (`.filter-divider`로 구분)
@@ -236,6 +241,20 @@ showToast('메시지', 'success'); // 또는 'error'
 - 결제수단: 카드(`C`) / 현금(`M`) 라디오. 현금 선택 시 할부 그룹(`#modalInstallmentGroup`) 숨김, 전송 시 `installment: "001"` 고정
 - 할부: `#modalInstallment` select, 일시불(`001`) ~ 12개월 할부(`012`)
 
+**일괄 등록 모달 (`#bulkModalOverlay`, `.modal--wide`)**
+- 페이지 헤더의 `일괄 등록` 버튼(`#bulkAddBtn`)으로 오픈 — 여러 건을 표 형태(`#bulkTbody`)로 입력해 한 번에 등록
+- ⚠️ 백엔드에 별도 벌크 API는 없음 — 기존 `POST /receipt`를 행(row)마다 **순차 호출**(Promise 체인)하는 프론트 전용 구현. 트랜잭션 원자성 없음(일부 행만 성공 가능)
+- 표 컬럼: 사용일 · 사용명 · 금액 · 사용구분 · 대분류 · 소분류 · 결제수단 · 할부 · 삭제
+- 사용일은 여러 행에 Air Datepicker를 동적으로 붙이는 복잡도를 피하기 위해 **네이티브 `<input type="date">`** 사용(단일 등록 모달과 다름) — `value`(`yyyy-MM-dd`)를 `-` 제거해 `yyyyMMdd`로 변환 후 전송
+- 대분류 select는 `modalParentEl.innerHTML`을 복제해 행마다 생성, 변경 시 기존 `loadChildCategories()` 재사용해 소분류 동적 로드
+- 결제수단이 현금(`M`)이면 해당 행의 할부 select를 `001`로 고정하고 비활성화(단일 모달과 동일 규칙)
+- 소분류는 단일 등록과 동일하게 선택값(비워도 `categoryId: null`로 전송)
+- `+ 행 추가`(`#bulkAddRowBtn`)로 행 추가, 각 행 삭제 버튼(`.bulk-remove-btn`)은 마지막 1개 행에서는 비활성화(최소 1행 유지)
+- 하단 `#bulkSummary`에 실시간 `총 N건 · 합계금액` 표시(`updateBulkSummary()`)
+- `일괄 저장`(`#bulkSaveBtn`) 클릭 시 전체 행 검증(사용명/금액/사용일/대분류 필수) → 실패 행은 `.bulk-row--invalid` 클래스로 빨간 테두리 표시하고 **전송 자체를 중단**(토스트 안내)
+- 검증 통과 시 각 행을 `POST /receipt`로 순차 호출, 성공/실패 건수 집계 후 토스트로 요약(`"N건 등록되었습니다"` / `"S건 성공, F건 실패했습니다"`), 완료 후 `apiSearch()`로 목록 갱신 (실패가 있어도 모달은 유지하지 않고 갱신만 수행 — 실패 건 재입력 UX는 아직 없음)
+- ESC 키: 일괄 등록 모달이 열려 있으면 그 모달만 닫힘, 단일 등록/수정 모달보다 우선 처리
+
 **날짜 관련 JS 변수/함수**
 - `startPicker` / `endPicker` / `modalDatePicker` — AirDatepicker 인스턴스 (전역)
 - `localeKo` — 한국어 locale 객체 (CDN 버그 우회용, `receipt.js` 내 정의)
@@ -250,17 +269,23 @@ showToast('메시지', 'success'); // 또는 'error'
 - `last-3-months` — 3개월 전 1일 ~ 이번달 말일
 
 **DTO 구조**
-- 등록 body: `{ name, receiptType("F"/"O"), paymentType("C"/"M"), installment("001"~"012"), amount, usedDate(yyyyMMdd), categoryId }`
+- 등록 body (`ReceiptDto.RegDto`): `{ name, receiptType("F"/"O"), paymentType("C"/"M"), installment("001"~"012"), amount, usedDate(yyyyMMdd), parentCategoryId, categoryId }` — `parentCategoryId` 필수, `categoryId`(소분류)는 선택값(null 허용)
 - 수정 body: `{ id, name, receiptType, paymentType, installment, amount, usedDate, categoryId }`
-- 목록 query: `startDate, endDate, categoryId, name, page, size`
-- 목록 응답: `{ code, message, data: { content:[...], totalPages, totalElements, currentPage, pageSize } }`
-- content 항목: `{ id, name, receiptType, receiptTypeLabel, amount, usedDate, categoryId, categoryName, parentCategoryName }`
+- 목록 query: `startDate, endDate, parentCategoryId, categoryId, name, page, size` — `parentCategoryId`/`categoryId` 각각 독립 필터
+- 목록 응답 (`ApiResponseDto.makeResponse(data, totalPages, totalElements, currentPage, pageSize)`): `{ code, message, data, totalPages, totalElements, currentPage, pageSize }` — `data`가 최상위 필드이며 `content` 래핑 없이 바로 배열
+- `ReceiptDto.ResDto`: `{ id, name, receiptType, paymentType, installment, parentCategoryId, categoryId, amount, usedDate }` — `categoryId`는 소분류 미지정 시 `null`. `receiptTypeLabel`/`categoryName`/`parentCategoryName` 없음, 프론트에서 별도 매핑 필요 (아래 참고)
 
 **receipt.js 주요 API 함수**
-- `apiSearch()` — `GET /receipt/list` (현재 더미 데이터, 백엔드 구현 시 fetch로 교체)
+- `apiSearch()` — `GET /receipt/list` **[연동 완료]**, 필터값(`parentCategoryId`, `categoryId` 포함)으로 `URLSearchParams` 구성 후 fetch, 응답 실패 시 토스트
 - `apiCreate(body)` — `POST /receipt` **[연동 완료]**, 성공 시 토스트 → 모달 닫기 → `apiSearch()` 재호출
 - `apiUpdate(id, body)` — `PUT /receipt` **[백엔드 미구현, stub]**
 - `apiDelete(id, tr, confirmTr)` — `DELETE /receipt/{id}` **[백엔드 미구현, stub]**
+- `buildCategoryNameMap()` — 목록 렌더링용 `categoryId(소분류) -> {name, parentName}` 캐시(`categoryNameMap`) + `parentCategoryId -> name` 캐시(`parentNameMap`) 생성, `init()`에서 `apiSearch()` 실행 전 대기
+- `openBulkModal()` / `closeBulkModal()` — 일괄 등록 모달 열기/닫기, 열 때 행 1개로 초기화
+- `addBulkRow()` / `removeBulkRow(tr)` — 일괄 등록 행 추가/삭제 (최소 1행 유지)
+- `readBulkRow(tr)` — 행 DOM에서 값 읽어 `RegDto` 형태 객체로 변환, 필수값 누락 시 `null` 반환 + `.bulk-row--invalid` 표시
+- `handleBulkSave()` — 전체 행 검증 후 `POST /receipt`를 순차 호출(신규 벌크 API 아님), 성공/실패 집계 토스트 후 `apiSearch()` 재호출
+- `updateBulkSummary()` — 행 개수·합계 금액 갱신 + 삭제 버튼 활성화 상태 갱신
 
 ## CSS Naming
 
@@ -272,4 +297,5 @@ BEM convention: `block__element--modifier` (e.g. `category-item__name`, `sidebar
 
 ## 역할
 - 시니어 풀스택 개발자이고 프론트엔드 부분은 수정가능, 백엔드는 직접 수정금지
+- 프론트 작업요청이 들어오면 계획을 나한테 보여주고 내가 작업지시를 하면 그때 코드 작업 실행
 - 백엔드 관련 내용이 나올 경우 나한테 가이드를 해줘
