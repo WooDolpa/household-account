@@ -42,6 +42,8 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 
+    // Apache POI
+    implementation 'org.apache.poi:poi-ooxml:5.4.1'
 }
 
 /* ----- Query DSL 설정 ----- */

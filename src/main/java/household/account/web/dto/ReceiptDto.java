@@ -19,12 +19,28 @@ public class ReceiptDto {
         private Integer categoryId;
         private Integer amount;
         private String usedDate;
+
+        @Builder
+        public RegDto(String name, String receiptType, String paymentType, String installment, Integer parentCategoryId, Integer categoryId, Integer amount, String usedDate) {
+            this.name = name;
+            this.receiptType = receiptType;
+            this.paymentType = paymentType;
+            this.installment = installment;
+            this.parentCategoryId = parentCategoryId;
+            this.categoryId = categoryId;
+            this.amount = amount;
+            this.usedDate = usedDate;
+        }
     }
 
     @Getter
     @NoArgsConstructor
     public static class BulkRegDto {
         private List<RegDto> receipts;
+
+        public BulkRegDto(List<RegDto> receipts) {
+            this.receipts = receipts;
+        }
     }
 
     @Getter
@@ -72,5 +88,19 @@ public class ReceiptDto {
             this.amount = amount;
             this.usedDate = usedDate;
         }
+    }
+
+    @Getter
+    @NoArgsConstructor
+    public static class UpdateDto {
+        private Integer id;
+        private String name;
+        private String receiptType;
+        private String paymentType;
+        private String installment;
+        private Integer parentCategoryId;
+        private Integer categoryId;
+        private Integer amount;
+        private String usedDate;
     }
 }

@@ -259,6 +259,20 @@ public class CategoryRepositoryImpl implements CategoryCustomRepository {
         return Optional.ofNullable(list);
     }
 
+    @Override
+    public Optional<List<Category>> findCategoryList() {
+
+        List<Category> list = factory.select(category)
+                .from(category)
+                .where(
+                        category.parentId.isNotNull(),
+                        category.dataStatus.ne(DataStatus.NO)
+                )
+                .fetch();
+
+        return Optional.ofNullable(list);
+    }
+
 
     private BooleanExpression matchId(Integer id) {
         if(id != null){

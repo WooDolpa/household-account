@@ -26,7 +26,7 @@ public enum Installment {
     private final String key;
     private final String description;
 
-    public static Installment findByKey(String key) {
+    public static Installment findByInstallment(String key) {
         return Arrays.stream(Installment.values())
                 .filter(i -> i.key.equals(key))
                 .findAny()

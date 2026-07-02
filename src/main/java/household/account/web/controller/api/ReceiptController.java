@@ -6,8 +6,10 @@ import household.account.web.service.ReceiptService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -42,6 +44,18 @@ public class ReceiptController {
     }
 
     /**
+     * 엑셀파일 일괄 저장
+     *
+     * @param file
+     * @return
+     */
+    @PostMapping(path = "/excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> saveReceiptExcel(@RequestParam("file") MultipartFile file) {
+        receiptService.saveReceiptExcel(file);
+        return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
+    }
+
+    /**
      * 사용내역 조회
      *
      * @param startDate
@@ -68,5 +82,17 @@ public class ReceiptController {
                 listDto.getTotalElements(),
                 listDto.getCurrentPage(),
                 listDto.getPageSize()), HttpStatus.OK);
+    }
+
+    /**
+     * 사용내역 수정
+     *
+     * @param dto
+     * @return
+     */
+    @PutMapping
+    public ResponseEntity<String> updateReceipt(@RequestBody ReceiptDto.UpdateDto dto) {
+        receiptService.updateReceipt(dto);
+        return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
     }
 }

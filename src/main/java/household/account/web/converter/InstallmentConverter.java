@@ -28,7 +28,7 @@ public class InstallmentConverter implements AttributeConverter<Installment, Str
             return null;
         }
 
-        Installment installment = Installment.findByKey(s);
+        Installment installment = Installment.findByInstallment(s);
         if(installment != null) {
             return installment;
         }

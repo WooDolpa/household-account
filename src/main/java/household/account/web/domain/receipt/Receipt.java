@@ -15,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
@@ -73,6 +74,58 @@ public class Receipt extends BaseEntity {
         this.usedDate = usedDate;
         this.dataStatus = dataStatus;
         this.parentCategory = parentCategory;
+        this.category = category;
+    }
+
+    public void changeName(String name) {
+        if(StringUtils.hasText(name)) {
+            this.name = name;
+        }
+    }
+
+    public void changeReceiptType(ReceiptType receiptType) {
+        if(receiptType != null) {
+            this.receiptType = receiptType;
+        }
+    }
+
+    public void changePaymentType(PaymentType paymentType) {
+        if(paymentType != null) {
+            this.paymentType = paymentType;
+        }
+    }
+
+    public void changeInstallment(Installment installment) {
+        if(installment != null) {
+            this.installment = installment;
+        }
+    }
+
+    public void changeAmount(Integer amount) {
+        if(amount != null && amount > 0) {
+            this.amount = amount;
+        }
+    }
+
+    public void changeUsedDate(String usedDate) {
+        if(StringUtils.hasText(usedDate)) {
+            this.usedDate = usedDate;
+        }
+    }
+
+    public void changeDataStatus(DataStatus dataStatus) {
+        if(dataStatus != null) {
+            this.dataStatus = dataStatus;
+        }
+    }
+
+    public void changeParentCategory(Category parentCategory) {
+        if(parentCategory != null) {
+            this.parentCategory = parentCategory;
+        }
+    }
+
+    public void changeCategory(Category category) {
         this.category = category;
     }
 }

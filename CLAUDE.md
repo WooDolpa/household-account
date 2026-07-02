@@ -51,13 +51,14 @@ Shared UI components live in `src/main/resources/templates/fragments/`. Include 
 
 **Error Handling**
 Services throw `CustomException(ExceptionCode)`. `CustomExceptionHandler` (`@ControllerAdvice`) catches these and returns `ResponseEntity<String>` with `ApiResponseDto.makeResponse(e)` at the exception's `HttpStatus`. All API responses — success and error — use `{ code, message }` JSON shape (no `data` field unless explicitly added via `makeResponse(Object data)`, or paginated fields via `makeResponse(Object data, Integer totalPages, Integer totalElements, Integer currentPage, Integer pageSize)`).
+동적 메시지가 필요한 경우(예: 엑셀 행별 검증 오류) `CustomException(ExceptionCode, String message)` 생성자로 메시지를 덮어쓸 수 있다.
 
 **Enums**
 - `DataStatus` — `Yes("Y")` / `No("N")`. Persisted as `"Y"`/`"N"` via `DataStatusConverter`. Default on new records is `DataStatus.Yes`.
 - `OrderType` — `Auto("auto")` / `Manual("manual")`. Used only in service logic, not persisted.
 - `ReceiptType` — `F("F")` 고정 / `O("O")` 일회성. Persisted as `"F"`/`"O"` via `ReceiptTypeConverter`.
 - `PaymentType` — `CARD("C")` / `CASH("M")`. Persisted via `PaymentTypeConverter`. 키 미일치 시 기본값 CARD.
-- `Installment` — `"001"` 일시불 ~ `"012"` 12개월 할부. Persisted via `InstallmentConverter`. 키 미일치 시 기본값 `"001"`.
+- `Installment` — `"001"` 일시불 ~ `"012"` 12개월 할부. Persisted via `InstallmentConverter`. 키 미일치 시 기본값 `"001"`. 키 조회 메서드는 `findByInstallment(key)` (구 `findByKey`에서 리네임됨).
 
 ## Package Structure
 
@@ -72,6 +73,7 @@ Base package: `household.account.web`
 - `*.dto` — request/response objects (inner static classes inside one `*Dto` file per domain)
 - `*.enums` — domain enumerations
 - `*.exception` — `CustomException`, `ExceptionCode`, `CustomExceptionHandler`
+- `*.utils` — `ExcelUtils` (`@Component`, 엑셀 파싱·행별 검증 → `RegDto` 리스트 변환)
 
 Static assets: `src/main/resources/static/css/` and `src/main/resources/static/js/`
 
@@ -94,8 +96,10 @@ Static assets: `src/main/resources/static/css/` and `src/main/resources/static/j
 
 **REST API — 사용내역 (`ReceiptController`):**
 - `GET /receipt/list` — 목록 조회 (query: startDate, endDate, parentCategoryId, categoryId, name, page, size) **[구현 완료, 프론트 연동 완료]** QueryDSL + Spring Data `Page`/`Pageable`(`PageableExecutionUtils`) 사용. `parentCategoryId`/`categoryId` 각각 독립적인 필터로 `where`에 적용됨(`matchParentCategoryIdEq`/`matchCategoryIdEq`). ⚠️ `name` 검색이 여전히 `eq`(완전일치)라 부분검색 안 됨
-- `POST /receipt` — 등록 **[구현 완료]** (body: `{ name, receiptType("F"/"O"), paymentType("C"/"M"), installment("001"~"012"), amount, usedDate(yyyyMMdd), parentCategoryId, categoryId }`) — `parentCategoryId`는 필수, `categoryId`(소분류)는 선택값(null 허용). `parentCategoryId` 미존재 시 `PARENT_CATEGORY_NOT_FOUND` 예외
+- `POST /receipt` — 등록 **[구현 완료, 프론트 연동 완료]** (body: `{ name, receiptType("F"/"O"), paymentType("C"/"M"), installment("001"~"012"), amount, usedDate(yyyyMMdd), parentCategoryId, categoryId }`) — `parentCategoryId`는 필수, `categoryId`(소분류)는 선택값(null 허용). `parentCategoryId` 미존재 시 `PARENT_CATEGORY_NOT_FOUND` 예외
 - `POST /receipt/bulk` — 일괄 등록 **[구현 완료, 프론트 연동 완료]** (body: `{ receipts: [RegDto, ...] }`) — `ReceiptService.saveBulkReceipt`가 `@Transactional` for 루프로 `saveReceipt`를 호출하므로 **한 건이라도 실패 시 전체 롤백**(원자성 보장). 응답은 `{ code, message }`. ⚠️ `receipts`가 `null`이면 NPE → 500 (프론트는 항상 검증된 1건 이상을 전송하므로 정상 흐름에선 미발생)
+- `POST /receipt/excel` — 엑셀 일괄 등록 **[구현 완료, 프론트 연동 완료]** (`multipart/form-data`, param: `file`) — `ExcelUtils.excelConverter`가 첫 번째 시트를 파싱(1행 헤더 skip, 빈 행 skip)해 `RegDto` 리스트로 변환 후 `saveBulkReceipt` 재사용(전체 성공/전체 롤백). 카테고리는 엑셀에 **이름**으로 입력 → 서비스가 활성 카테고리 전체를 사전 로드한 Map(`이름 -> Category`, 소분류는 `"부모id:이름"` 키)으로 매핑. 행별 검증 실패 시 저장하지 않고 `EXCEL_ROW_INVALID`로 행번호 포함 메시지 반환(`\n` 구분, 최대 5건 + `외 N건`). 예외: `EXCEL_FILE_INVALID`(.xlsx 아님) / `EXCEL_PARSE_FAIL`(손상·암호 파일) / `EXCEL_EMPTY`(데이터 없음)
+- `PUT /receipt` — 수정 **[구현 완료, 프론트 연동 완료]** (body: `ReceiptDto.UpdateDto` — `{ id, name, receiptType, paymentType, installment, amount, usedDate, parentCategoryId, categoryId }`) — 미존재 시 `RECEIPT_NOT_FOUND`. 엔티티 `change*` 메서드는 null/빈값 가드로 부분 수정 안전. 단 `changeCategory`만 가드 없이 그대로 대입 → `categoryId: null` 전송 시 **소분류 해제** 가능
 - `DELETE /receipt/{id}` — 삭제 **[백엔드 미구현]**
 
 **Not yet implemented:**
@@ -255,6 +259,15 @@ showToast('메시지', 'success'); // 또는 'error'
 - 검증 통과 시 `POST /receipt/bulk` 단일 호출 (전송 중 `bulkSaveBtn` 비활성화). 성공(`code === '200'`) 시 `"N건 등록되었습니다"` 토스트 → 모달 닫기 → `apiSearch()` 목록 갱신. 실패 시 서버 `message` 토스트 표시하고 **모달 유지**(전체 롤백이므로 입력값 수정 후 재시도 가능)
 - ESC 키: 일괄 등록 모달이 열려 있으면 그 모달만 닫힘, 단일 등록/수정 모달보다 우선 처리
 
+**엑셀 업로드 (`#excelUploadBtn`)**
+- 페이지 헤더 버튼 순서: `엑셀 업로드` → `일괄 등록` → `+ 등록`
+- 숨김 파일 input(`#excelFileInput`, `accept=".xlsx"`, `.hidden`) 트리거 방식 — 별도 모달 없이 브라우저 파일 다이얼로그 사용
+- `handleExcelUpload()`: 확장자 검증 → `FormData`로 `POST /receipt/excel` 전송 (`Content-Type` 헤더 미지정 — 브라우저가 multipart boundary 자동 설정)
+- 피드백은 **토스트가 아닌 `alert()` 사용** — 행별 오류 메시지가 `\n` 멀티라인이라 alert이 그대로 표시 가능 (이 페이지의 다른 기능은 토스트 유지)
+- 전송 중 `excelUploadBtn` 비활성화(중복 업로드 방지 — 백엔드에 중복 방어 없음), 파일 선택 직후 `input.value = ''` 초기화(같은 파일 재선택 시에도 `change` 재발화 보장)
+- 성공 시 alert → `apiSearch()` 목록 갱신. 실패 시 서버 `message` alert (한 건이라도 오류면 전체 미등록이므로 수정 후 같은 파일 재업로드 가능)
+- 엑셀 양식: 1행 헤더 필수(무조건 skip), 2행부터 데이터. A~H 컬럼 순서 고정 — 사용일(날짜 서식 셀 또는 `2026.07.01`/`20260701` 등 텍스트) · 사용명(≤32자) · 금액(콤마 허용) · 사용구분(`고정`/`일회성`) · 대분류(등록된 이름 그대로) · 소분류(선택, 해당 대분류 소속) · 결제수단(`카드`/`현금`) · 할부(선택, `일시불`/`2개월`~`12개월`, 현금이면 무시하고 일시불)
+
 **날짜 관련 JS 변수/함수**
 - `startPicker` / `endPicker` / `modalDatePicker` — AirDatepicker 인스턴스 (전역)
 - `localeKo` — 한국어 locale 객체 (CDN 버그 우회용, `receipt.js` 내 정의)
@@ -271,7 +284,7 @@ showToast('메시지', 'success'); // 또는 'error'
 **DTO 구조**
 - 등록 body (`ReceiptDto.RegDto`): `{ name, receiptType("F"/"O"), paymentType("C"/"M"), installment("001"~"012"), amount, usedDate(yyyyMMdd), parentCategoryId, categoryId }` — `parentCategoryId` 필수, `categoryId`(소분류)는 선택값(null 허용)
 - 일괄 등록 body (`ReceiptDto.BulkRegDto`): `{ receipts: [RegDto, ...] }` — `RegDto` 리스트 래퍼
-- 수정 body: `{ id, name, receiptType, paymentType, installment, amount, usedDate, categoryId }`
+- 수정 body (`ReceiptDto.UpdateDto`): `{ id, name, receiptType, paymentType, installment, amount, usedDate, parentCategoryId, categoryId }` — `categoryId: null`이면 소분류 해제
 - 목록 query: `startDate, endDate, parentCategoryId, categoryId, name, page, size` — `parentCategoryId`/`categoryId` 각각 독립 필터
 - 목록 응답 (`ApiResponseDto.makeResponse(data, totalPages, totalElements, currentPage, pageSize)`): `{ code, message, data, totalPages, totalElements, currentPage, pageSize }` — `data`가 최상위 필드이며 `content` 래핑 없이 바로 배열
 - `ReceiptDto.ResDto`: `{ id, name, receiptType, paymentType, installment, parentCategoryId, categoryId, amount, usedDate }` — `categoryId`는 소분류 미지정 시 `null`. `receiptTypeLabel`/`categoryName`/`parentCategoryName` 없음, 프론트에서 별도 매핑 필요 (아래 참고)
@@ -279,8 +292,9 @@ showToast('메시지', 'success'); // 또는 'error'
 **receipt.js 주요 API 함수**
 - `apiSearch()` — `GET /receipt/list` **[연동 완료]**, 필터값(`parentCategoryId`, `categoryId` 포함)으로 `URLSearchParams` 구성 후 fetch, 응답 실패 시 토스트
 - `apiCreate(body)` — `POST /receipt` **[연동 완료]**, 성공 시 토스트 → 모달 닫기 → `apiSearch()` 재호출
-- `apiUpdate(id, body)` — `PUT /receipt` **[백엔드 미구현, stub]**
+- `apiUpdate(id, body)` — `PUT /receipt` **[연동 완료]**, `handleSave`가 만든 body에 `id`를 추가해 전송. 성공 시 토스트 → 모달 닫기 → `apiSearch()`, 실패 시 토스트 + 모달 유지
 - `apiDelete(id, tr, confirmTr)` — `DELETE /receipt/{id}` **[백엔드 미구현, stub]**
+- `handleExcelUpload()` — `POST /receipt/excel` **[연동 완료]**, `FormData` 전송, 피드백은 alert (위 엑셀 업로드 참고)
 - `buildCategoryNameMap()` — 목록 렌더링용 `categoryId(소분류) -> {name, parentName}` 캐시(`categoryNameMap`) + `parentCategoryId -> name` 캐시(`parentNameMap`) 생성, `init()`에서 `apiSearch()` 실행 전 대기
 - `openBulkModal()` / `closeBulkModal()` — 일괄 등록 모달 열기/닫기, 열 때 행 1개로 초기화
 - `addBulkRow()` / `removeBulkRow(tr)` — 일괄 등록 행 추가/삭제 (최소 1행 유지)

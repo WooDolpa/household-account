@@ -22,4 +22,5 @@ public interface CategoryCustomRepository {
     Optional<List<Category>> findCategoryListByParentIdAndOrderNumGoeAndLt(Integer parentId, Integer newOrderNum, Integer originalOrderNum);
     Optional<List<Category>> findCategoryListByParentIdAndOrderNumGtAndLoe(Integer parentId, Integer originalOrderNum, Integer newOrderNum);
     Optional<List<Category>> findCategoryListByParentIdAndDataStatusNotAndOrderNumGt(Integer parentId, Integer orderNum);
+    Optional<List<Category>> findCategoryList();
 }

@@ -36,6 +36,8 @@
     var bulkCancelBtn         = document.getElementById('bulkCancelBtn');
     var bulkSaveBtn           = document.getElementById('bulkSaveBtn');
     var bulkSummary           = document.getElementById('bulkSummary');
+    var excelUploadBtn        = document.getElementById('excelUploadBtn');
+    var excelFileInput        = document.getElementById('excelFileInput');
 
     /* ─── 카테고리 이름 캐시 (목록 렌더링용) ────────────── */
 
@@ -545,6 +547,44 @@
         });
     }
 
+    /* ─── 엑셀 업로드 ────────────────────────────────────── */
+
+    function handleExcelUpload() {
+        var file = excelFileInput.files[0];
+        if (!file) return;
+
+        excelFileInput.value = ''; // 같은 파일 재선택 시에도 change 재발화 보장
+
+        if (!/\.xlsx$/i.test(file.name)) {
+            alert('엑셀 파일(.xlsx)만 업로드할 수 있습니다.');
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        excelUploadBtn.disabled = true;
+
+        fetch('/receipt/excel', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (res) {
+            excelUploadBtn.disabled = false;
+            if (res.code === '200') {
+                alert('엑셀 등록이 완료되었습니다.');
+                apiSearch();
+            } else {
+                alert(res.message || '엑셀 업로드에 실패했습니다.');
+            }
+        })
+        .catch(function () {
+            excelUploadBtn.disabled = false;
+            alert('엑셀 업로드에 실패했습니다.');
+        });
+    }
+
     /* ─── 저장 처리 ──────────────────────────────────────── */
 
     function handleSave() {
@@ -644,8 +684,26 @@
     }
 
     function apiUpdate(id, body) {
-        // TODO: PUT /receipt
-        showToast('API 연동 전입니다.', 'error');
+        body.id = Number(id);
+
+        fetch('/receipt', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (res) {
+            if (res.code === '200') {
+                showToast('수정되었습니다.', 'success');
+                closeModal();
+                apiSearch();
+            } else {
+                showToast(res.message || '수정에 실패했습니다.', 'error');
+            }
+        })
+        .catch(function () {
+            showToast('수정에 실패했습니다.', 'error');
+        });
     }
 
     function apiDelete(id, tr, confirmTr) {
@@ -696,6 +754,9 @@
         if (!bulkModalOverlay.classList.contains('hidden')) closeBulkModal();
         else closeModal();
     });
+
+    excelUploadBtn.addEventListener('click', function () { excelFileInput.click(); });
+    excelFileInput.addEventListener('change', handleExcelUpload);
 
     bulkAddBtn.addEventListener('click', openBulkModal);
     bulkAddRowBtn.addEventListener('click', addBulkRow);

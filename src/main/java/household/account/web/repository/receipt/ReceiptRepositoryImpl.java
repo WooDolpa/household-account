@@ -32,7 +32,7 @@ public class ReceiptRepositoryImpl implements ReceiptCustomRepository {
                         matchUsedDateLoe(endDate),
                         matchParentCategoryIdEq(parentCategoryId),
                         matchCategoryIdEq(categoryId),
-                        matchNameEq(name)
+                        matchName(name)
                 )
                 .orderBy(receipt.usedDate.asc())
                 .offset(pageable.getOffset())
@@ -47,7 +47,7 @@ public class ReceiptRepositoryImpl implements ReceiptCustomRepository {
                         matchUsedDateLoe(endDate),
                         matchParentCategoryIdEq(parentCategoryId),
                         matchCategoryIdEq(categoryId),
-                        matchNameEq(name)
+                        matchName(name)
                 );
 
         return PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
@@ -81,9 +81,9 @@ public class ReceiptRepositoryImpl implements ReceiptCustomRepository {
         return null;
     }
 
-    private BooleanExpression matchNameEq(String name) {
+    private BooleanExpression matchName(String name) {
         if(StringUtils.hasText(name)) {
-            return receipt.name.eq(name);
+            return receipt.name.like("%"+name+"%");
         }
         return null;
     }
