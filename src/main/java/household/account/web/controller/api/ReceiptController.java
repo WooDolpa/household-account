@@ -30,6 +30,18 @@ public class ReceiptController {
     }
 
     /**
+     * 사용내역 일괄등록
+     *
+     * @param dto
+     * @return
+     */
+    @PostMapping(path = "/bulk")
+    public ResponseEntity<String> saveBulkReceipt(@RequestBody ReceiptDto.BulkRegDto dto) {
+        receiptService.saveBulkReceipt(dto);
+        return new ResponseEntity<>(ApiResponseDto.makeSuccessResponse(), HttpStatus.OK);
+    }
+
+    /**
      * 사용내역 조회
      *
      * @param startDate

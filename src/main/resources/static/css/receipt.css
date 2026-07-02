@@ -598,12 +598,19 @@
 }
 
 .bulk-table .bulk-name     { min-width: 140px; }
-.bulk-table .bulk-amount   { min-width: 90px; text-align: right; }
-.bulk-table .bulk-date     { min-width: 130px; }
+.bulk-table .bulk-amount   { min-width: 140px; text-align: right; }
+.bulk-table .bulk-date     { min-width: 130px; cursor: pointer; }
+.bulk-table .bulk-receipt-type { min-width: 95px; }
 .bulk-table .bulk-parent,
 .bulk-table .bulk-child    { min-width: 110px; }
 .bulk-table .bulk-payment  { min-width: 80px; }
 .bulk-table .bulk-installment { min-width: 100px; }
+
+.bulk-table .bulk-remove-btn {
+    width: 60px;
+    padding: 6px 16px;
+    font-size: 13px;
+}
 
 .bulk-row--invalid .form-input,
 .bulk-row--invalid .form-select {

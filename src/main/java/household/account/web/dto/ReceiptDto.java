@@ -23,6 +23,12 @@ public class ReceiptDto {
 
     @Getter
     @NoArgsConstructor
+    public static class BulkRegDto {
+        private List<RegDto> receipts;
+    }
+
+    @Getter
+    @NoArgsConstructor
     public static class ListDto {
 
         private List<ResDto> data;

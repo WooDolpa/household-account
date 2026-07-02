@@ -68,6 +68,19 @@ public class ReceiptService {
     }
 
     /**
+     * 사용내역 일괄등록
+     *
+     * @param dto
+     */
+    @Transactional
+    public void saveBulkReceipt(ReceiptDto.BulkRegDto dto) {
+        List<ReceiptDto.RegDto> receipts = dto.getReceipts();
+        for (ReceiptDto.RegDto receipt : receipts) {
+            saveReceipt(receipt);
+        }
+    }
+
+    /**
      * 사용내역 조회
      *
      * @param startDate

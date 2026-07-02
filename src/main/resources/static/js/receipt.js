@@ -393,9 +393,16 @@
         '<option value="012">12개월 할부</option>';
 
     function openBulkModal() {
+        destroyBulkDatePickers();
         bulkTbody.innerHTML = '';
         addBulkRow();
         bulkModalOverlay.classList.remove('hidden');
+    }
+
+    function destroyBulkDatePickers() {
+        bulkTbody.querySelectorAll('.bulk-row').forEach(function (tr) {
+            if (tr._datePicker) tr._datePicker.destroy();
+        });
     }
 
     function closeBulkModal() {
@@ -406,7 +413,7 @@
         var tr = document.createElement('tr');
         tr.className = 'bulk-row';
         tr.innerHTML =
-            '<td><input type="date" class="form-input bulk-date"></td>' +
+            '<td><input type="text" class="form-input bulk-date" placeholder="날짜를 선택하세요" readonly></td>' +
             '<td><input type="text" class="form-input bulk-name" maxlength="32" placeholder="사용명"></td>' +
             '<td><input type="text" class="form-input bulk-amount" inputmode="numeric" placeholder="금액"></td>' +
             '<td>' +
@@ -425,6 +432,12 @@
             '</td>' +
             '<td><select class="form-select bulk-installment">' + INSTALLMENT_OPTIONS_HTML + '</select></td>' +
             '<td class="col-actions"><button type="button" class="btn btn--secondary btn--sm bulk-remove-btn">삭제</button></td>';
+
+        tr._datePicker = new AirDatepicker(tr.querySelector('.bulk-date'), {
+            locale:     localeKo,
+            dateFormat: 'yyyy.MM.dd',
+            autoClose:  true
+        });
 
         tr.querySelector('.bulk-remove-btn').addEventListener('click', function () {
             removeBulkRow(tr);
@@ -453,6 +466,7 @@
 
     function removeBulkRow(tr) {
         if (bulkTbody.querySelectorAll('.bulk-row').length <= 1) return;
+        if (tr._datePicker) tr._datePicker.destroy();
         tr.remove();
         updateBulkSummary();
     }
@@ -474,8 +488,8 @@
     function readBulkRow(tr) {
         var name        = tr.querySelector('.bulk-name').value.trim();
         var amount      = tr.querySelector('.bulk-amount').value.replace(/,/g, '').trim();
-        var dateVal     = tr.querySelector('.bulk-date').value; // yyyy-MM-dd
-        var usedDate    = dateVal ? dateVal.replace(/-/g, '') : '';
+        var picker      = tr._datePicker;
+        var usedDate    = picker && picker.selectedDates.length > 0 ? dateToYMD(picker.selectedDates[0]) : '';
         var receiptType = tr.querySelector('.bulk-receipt-type').value;
         var parentId    = tr.querySelector('.bulk-parent').value;
         var childId     = tr.querySelector('.bulk-child').value;
@@ -508,32 +522,26 @@
         }
 
         bulkSaveBtn.disabled = true;
-        var successCount = 0;
-        var failCount    = 0;
 
-        bodies.reduce(function (chain, body) {
-            return chain.then(function () {
-                return fetch('/receipt', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                })
-                .then(function (res) { return res.json(); })
-                .then(function (res) {
-                    if (res.code === '200') successCount++; else failCount++;
-                })
-                .catch(function () { failCount++; });
-            });
-        }, Promise.resolve())
-        .then(function () {
+        fetch('/receipt/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ receipts: bodies })
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (res) {
             bulkSaveBtn.disabled = false;
-            if (failCount === 0) {
-                showToast(successCount + '건 등록되었습니다.', 'success');
+            if (res.code === '200') {
+                showToast(bodies.length + '건 등록되었습니다.', 'success');
                 closeBulkModal();
+                apiSearch();
             } else {
-                showToast(successCount + '건 성공, ' + failCount + '건 실패했습니다.', 'error');
+                showToast(res.message || '일괄 등록에 실패했습니다.', 'error');
             }
-            apiSearch();
+        })
+        .catch(function () {
+            bulkSaveBtn.disabled = false;
+            showToast('일괄 등록에 실패했습니다.', 'error');
         });
     }
 
